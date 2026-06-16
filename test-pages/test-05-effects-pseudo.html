@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Effects, Pseudo-elements, Z-index</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, Inter, sans-serif; background: #f9fafb; color: #111827; }
+  .section { padding: 64px 80px; background: white; border-bottom: 1px solid #f3f4f6; }
+  .section.gray { background: #f9fafb; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin-bottom: 24px; }
+
+  /* ---- 1. Multiple box shadows ---- */
+  .shadow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .shadow-card { background: white; border-radius: 12px; padding: 28px; }
+  .shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); }
+  .shadow-md  { box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06); }
+  .shadow-lg  { box-shadow: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05); }
+  .shadow-xl  { box-shadow: 0 20px 25px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.04); }
+  .shadow-colored { box-shadow: 0 8px 24px rgba(99,102,241,0.35); border: 1px solid rgba(99,102,241,0.2); }
+  .shadow-inset { box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); background: #f3f4f6; }
+
+  /* ---- 2. Pseudo-element dividers (::before / ::after) ---- */
+  .pseudo-section {
+    position: relative;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+  }
+  .has-divider::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 40px; right: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+  }
+  .has-badge::before {
+    content: 'NEW';
+    position: absolute;
+    top: -10px; right: 20px;
+    background: #6366f1; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 999px;
+    letter-spacing: 0.06em;
+  }
+  .has-left-bar::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 16px; bottom: 16px;
+    width: 3px;
+    background: #6366f1;
+    border-radius: 0 3px 3px 0;
+  }
+  .has-bg-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(139,92,246,0.05));
+    border-radius: 12px;
+    pointer-events: none;
+  }
+
+  /* ---- 3. mix-blend-mode ---- */
+  .blend-wrap {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    border-radius: 16px;
+    padding: 40px;
+    display: flex; gap: 20px; align-items: center;
+  }
+  .blend-text {
+    font-size: 48px; font-weight: 900; color: white;
+    mix-blend-mode: overlay;
+    text-shadow: none;
+    flex: 1;
+  }
+  .blend-box {
+    width: 80px; height: 80px; border-radius: 12px; background: white;
+    mix-blend-mode: screen;
+  }
+  .blend-multiply {
+    width: 80px; height: 80px; border-radius: 12px; background: black;
+    mix-blend-mode: multiply;
+    opacity: 0.3;
+  }
+
+  /* ---- 4. Z-index stacking ---- */
+  .stack-demo {
+    position: relative;
+    height: 200px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: visible;
+  }
+  .stack-item {
+    position: absolute;
+    width: 160px; height: 100px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .stack-a { background: #6366f1; top: 20px; left: 40px;  z-index: 10; }
+  .stack-b { background: #10b981; top: 50px; left: 120px; z-index: 30; }
+  .stack-c { background: #f59e0b; top: 80px; left: 200px; z-index: 20; }
+  .stack-d { background: #ef4444; top: 30px; left: 280px; z-index:  5; }
+
+  /* ---- 5. CSS outline vs border ---- */
+  .outline-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .outline-card {
+    padding: 20px; border-radius: 8px; background: white;
+    font-size: 14px; color: #374151;
+  }
+  .with-border   { border: 2px solid #6366f1; }
+  .with-outline  { outline: 2px solid #10b981; outline-offset: 2px; }
+  .with-both     { border: 2px solid #6366f1; outline: 2px solid #f59e0b; outline-offset: 4px; }
+
+  /* ---- 6. Opacity layers ---- */
+  .opacity-row { display: flex; gap: 16px; align-items: flex-end; }
+  .op-block {
+    width: 80px; height: 80px; border-radius: 10px;
+    background: #6366f1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white;
+  }
+
+  /* ---- 7. Transform: rotate + scale ---- */
+  .transform-grid { display: flex; gap: 32px; flex-wrap: wrap; padding: 40px 0; }
+  .transform-card {
+    width: 100px; height: 100px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: white;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  }
+
+  /* ---- 8. Gradient border via border-image ---- */
+  .grad-border-card {
+    padding: 24px;
+    border-radius: 12px;
+    background: white;
+    position: relative;
+  }
+  .grad-border-card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    z-index: -1;
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. Multiple box shadows -->
+<div class="section">
+  <div class="label">Test 1 — Multiple box shadows (sm, md, lg, xl, colored, inset)</div>
+  <div class="shadow-grid">
+    <div class="shadow-card shadow-sm">
+      <strong>shadow-sm</strong><br/>
+      <small style="color:#9ca3af">0 1px 3px + 0 1px 2px</small>
+    </div>
+    <div class="shadow-card shadow-md">
+      <strong>shadow-md</strong><br/>
+      <small style="color:#9ca3af">0 4px 6px + 0 2px 4px</small>
+    </div>
+    <div class="shadow-card shadow-lg">
+      <strong>shadow-lg</strong><br/>
+      <small style="color:#9ca3af">0 10px 15px + 0 4px 6px</small>
+    </div>
+    <div class="shadow-card shadow-xl">
+      <strong>shadow-xl</strong><br/>
+      <small style="color:#9ca3af">0 20px 25px + 0 10px 10px</small>
+    </div>
+    <div class="shadow-card shadow-colored" style="border-radius:12px;">
+      <strong>Colored shadow</strong><br/>
+      <small style="color:#9ca3af">rgba(99,102,241,0.35)</small>
+    </div>
+    <div class="shadow-card shadow-inset" style="border-radius:12px;">
+      <strong>Inset shadow</strong><br/>
+      <small style="color:#9ca3af">inset 0 2px 4px</small>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Pseudo-elements -->
+<div class="section gray">
+  <div class="label">Test 2 — Pseudo-elements (::before and ::after as decorative boxes)</div>
+
+  <div class="pseudo-section has-divider">
+    <strong>::after gradient divider</strong>
+    <p style="margin-top:8px; color:#6b7280; font-size:14px;">The gradient line at the bottom is a ::after pseudo-element. Should appear as a separate layer in Figma.</p>
+  </div>
+
+  <div class="pseudo-section has-badge" style="margin-top:16px;">
+    <strong>::before badge</strong>
+    <p style="margin-top:8px; color:#6b7280; font-size:14px;">The "NEW" pill at the top-right is a ::before pseudo-element with background + text content. Text-content pseudos are skipped (conservative).</p>
+  </div>
+
+  <div class="pseudo-section has-left-bar" style="margin-top:16px; padding-left:52px;">
+    <strong>::before accent bar</strong>
+    <p style="margin-top:8px; color:#6b7280; font-size:14px;">The purple bar on the left edge is a ::before pseudo-element. Common pattern for blockquotes, alerts, and sidebar highlights.</p>
+  </div>
+
+  <div class="pseudo-section has-bg-overlay" style="margin-top:16px;">
+    <strong>::before background overlay</strong>
+    <p style="margin-top:8px; color:#6b7280; font-size:14px;">A subtle gradient tint applied via ::before. Should come through as a translucent layer in Figma.</p>
+  </div>
+</div>
+
+<!-- 3. mix-blend-mode -->
+<div class="section">
+  <div class="label">Test 3 — mix-blend-mode (overlay, screen, multiply)</div>
+  <div class="blend-wrap">
+    <div class="blend-text">Overlay</div>
+    <div class="blend-box"></div>
+    <div class="blend-multiply"></div>
+  </div>
+</div>
+
+<!-- 4. Z-index stacking -->
+<div class="section gray">
+  <div class="label">Test 4 — Z-index stacking (green z:30 should be on top, purple z:10 middle, amber z:20 next)</div>
+  <div style="padding: 20px 0 80px;">
+    <div class="stack-demo">
+      <div class="stack-item stack-a">z-index: 10 (purple)</div>
+      <div class="stack-item stack-b">z-index: 30 (green — top)</div>
+      <div class="stack-item stack-c">z-index: 20 (amber)</div>
+      <div class="stack-item stack-d">z-index: 5 (red — back)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. Outline vs border -->
+<div class="section">
+  <div class="label">Test 5 — CSS outline vs border (outline doesn't affect layout)</div>
+  <div class="outline-grid">
+    <div class="outline-card with-border">
+      border: 2px solid indigo<br/>
+      <small style="color:#9ca3af">Affects layout box</small>
+    </div>
+    <div class="outline-card with-outline">
+      outline: 2px solid green + offset 2px<br/>
+      <small style="color:#9ca3af">Does NOT affect layout</small>
+    </div>
+    <div class="outline-card with-both">
+      Both border + outline<br/>
+      <small style="color:#9ca3af">Two separate visual rings</small>
+    </div>
+  </div>
+</div>
+
+<!-- 6. Opacity -->
+<div class="section gray">
+  <div class="label">Test 6 — Varying opacity levels (should render at correct translucency)</div>
+  <div class="opacity-row">
+    <div class="op-block" style="opacity:1.0">100%</div>
+    <div class="op-block" style="opacity:0.75">75%</div>
+    <div class="op-block" style="opacity:0.50">50%</div>
+    <div class="op-block" style="opacity:0.25">25%</div>
+    <div class="op-block" style="opacity:0.10">10%</div>
+  </div>
+</div>
+
+<!-- 7. CSS Transforms -->
+<div class="section">
+  <div class="label">Test 7 — CSS transforms (rotate, scale)</div>
+  <div class="transform-grid">
+    <div class="transform-card" style="transform: rotate(0deg)">0°</div>
+    <div class="transform-card" style="transform: rotate(15deg)">15°</div>
+    <div class="transform-card" style="transform: rotate(45deg)">45°</div>
+    <div class="transform-card" style="transform: rotate(-30deg)">−30°</div>
+    <div class="transform-card" style="transform: rotate(90deg)">90°</div>
+    <div class="transform-card" style="transform: scale(1.2); background: linear-gradient(135deg,#10b981,#0d9488);">scale 1.2×</div>
+  </div>
+</div>
+
+<!-- 8. Gradient border via ::before -->
+<div class="section gray">
+  <div class="label">Test 8 — Gradient border via ::before z-index trick</div>
+  <div style="display:flex; gap:24px; flex-wrap:wrap;">
+    <div class="grad-border-card">
+      <strong>Gradient border</strong>
+      <p style="font-size:14px; color:#6b7280; margin-top:8px; max-width:200px;">The colorful border is rendered via a ::before pseudo-element sitting behind at z-index: -1.</p>
+    </div>
+    <div class="grad-border-card" style="background:#1e1b4b;">
+      <strong style="color:white;">Dark variant</strong>
+      <p style="font-size:14px; color:#a1a1aa; margin-top:8px; max-width:200px;">Same trick on a dark card background.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Hard Cases</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, Inter, sans-serif;
+    background: #f8f9fb;
+    color: #111827;
+    padding-top: 64px; /* offset for fixed nav */
+  }
+
+  /* ─── Fixed nav (Test 1) ─── */
+  .site-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+  }
+  .nav-inner {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+  .nav-logo {
+    font-size: 17px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    flex: 1;
+  }
+  .nav-links span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  .nav-cta {
+    background: #6366f1;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 8px;
+  }
+
+  /* ─── Shared ─── */
+  .section {
+    padding: 72px 80px 64px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .section.gray { background: #f8f9fb; }
+  .section.dark { background: #0f172a; }
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 28px;
+  }
+  .label.on-dark { color: rgba(255,255,255,0.4); }
+
+  /* ─── Test 2: Gradient text ─── */
+  .gradient-heading {
+    font-size: 60px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+  .gradient-sub {
+    font-size: 18px;
+    color: #6b7280;
+    max-width: 620px;
+    line-height: 1.6;
+  }
+  .inline-grad {
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  .pill-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .pill {
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pill-indigo { background: #eef2ff; color: #6366f1; }
+  .pill-purple { background: #f5f3ff; color: #7c3aed; }
+  .pill-pink   { background: #fdf2f8; color: #db2777; }
+
+  /* ─── Test 3: clip-path ─── */
+  .clip-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .clip-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .clip-box {
+    width: 140px; height: 140px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 600; text-align: center;
+  }
+  .clip-circle  { clip-path: circle(50%); }
+  .clip-tri     { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+  .clip-diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .clip-arrow   { clip-path: polygon(0% 20%, 60% 20%, 60% 0%, 100% 50%, 60% 100%, 60% 80%, 0% 80%); }
+  .clip-star    { clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+  .clip-lbl { font-size: 11px; color: #9ca3af; font-weight: 500; }
+  .clip-note {
+    flex: 1;
+    min-width: 220px;
+    background: #fff8e6;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.6;
+    align-self: center;
+  }
+  .clip-note strong { display: block; margin-bottom: 6px; color: #78350f; }
+
+  /* ─── Test 4: Dashboard ─── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-bar { width: 36px; height: 3px; border-radius: 2px; margin-bottom: 6px; }
+  .stat-lbl { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-val { font-size: 30px; font-weight: 700; color: #111827; line-height: 1; }
+  .stat-delta { font-size: 12px; font-weight: 600; }
+  .stat-delta.up   { color: #10b981; }
+  .stat-delta.down { color: #ef4444; }
+
+  .dash-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .dash-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 22px 24px;
+  }
+  .dash-title { font-size: 14px; font-weight: 600; color: #111827; }
+  .dash-sub   { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+  .chart-area {
+    height: 140px;
+    background: linear-gradient(180deg, rgba(99,102,241,0.06) 0%, rgba(99,102,241,0.01) 100%);
+    border-radius: 8px;
+    margin-top: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-bars {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 0 12px;
+    height: 100%;
+  }
+  .bar {
+    flex: 1;
+    background: rgba(99,102,241,0.25);
+    border-radius: 3px 3px 0 0;
+  }
+  .bar.hi { background: rgba(99,102,241,0.6); border: 1.5px solid #6366f1; border-bottom: none; }
+
+  .activity { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .act-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+  .act-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .act-txt { font-size: 13px; color: #374151; flex: 1; }
+  .act-time { font-size: 11px; color: #9ca3af; }
+
+  /* ─── Test 5: Overflow carousel ─── */
+  .carousel-wrap {
+    overflow: hidden;
+    width: 100%;
+    border-radius: 12px;
+  }
+  .carousel-track {
+    display: flex;
+    gap: 16px;
+  }
+  .c-card {
+    flex-shrink: 0;
+    width: 260px;
+    height: 160px;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    color: white;
+  }
+  .c-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.45) 0%, transparent 65%);
+  }
+  .c-title { font-size: 15px; font-weight: 700; position: relative; z-index: 1; }
+  .c-sub   { font-size: 11px; opacity: 0.75; position: relative; z-index: 1; margin-top: 3px; }
+
+  /* ─── Test 6: CSS Filters ─── */
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+  }
+  .f-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .f-box {
+    width: 110px; height: 110px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+  }
+  .f-lbl { font-size: 11px; color: #6b7280; font-weight: 500; text-align: center; }
+
+  /* ─── Test 7: Multi-layer backgrounds ─── */
+  .bg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .bg-card {
+    height: 160px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    color: white;
+  }
+  .bg-label { font-size: 13px; font-weight: 700; }
+  .bg-desc  { font-size: 11px; opacity: 0.7; margin-top: 3px; }
+
+  /* ─── Test 8: Grid template areas ─── */
+  .area-grid {
+    display: grid;
+    grid-template-areas:
+      "sidebar topbar topbar"
+      "sidebar main    widget"
+      "sidebar main    widget"
+      "sidebar foot    foot";
+    grid-template-columns: 180px 1fr 220px;
+    grid-template-rows: 52px 1fr 1fr 44px;
+    gap: 8px;
+    height: 340px;
+  }
+  .a-topbar  { grid-area: topbar;  background: #6366f1; border-radius: 10px; display: flex; align-items: center; padding: 0 20px; color: white; font-size: 14px; font-weight: 600; gap: 12px; }
+  .a-sidebar { grid-area: sidebar; background: #1e293b; border-radius: 10px; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .a-main    { grid-area: main;    background: white; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; }
+  .a-widget  { grid-area: widget;  background: #f0fdf4; border-radius: 10px; border: 1px solid #d1fae5; padding: 16px; }
+  .a-foot    { grid-area: foot;    background: #f1f5f9; border-radius: 10px; display: flex; align-items: center; padding: 0 16px; font-size: 12px; color: #64748b; }
+  .sb-item { font-size: 12px; color: rgba(255,255,255,0.6); padding: 7px 10px; border-radius: 6px; }
+  .sb-item.active { background: rgba(255,255,255,0.12); color: white; font-weight: 600; }
+
+  /* ─── Test 9: Text truncation ─── */
+  .trunc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .trunc-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .trunc-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #9ca3af; margin-bottom: 12px; }
+  .t-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px; color: #374151; line-height: 1.5;
+  }
+  .t-clamp3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 14px; color: #374151; line-height: 1.6;
+  }
+  .t-clamp2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 14px; color: #374151; line-height: 1.6;
+  }
+  .trunc-note { font-size: 11px; color: #d1d5db; margin-top: 12px; }
+
+  /* ─── Test 10: Stacking contexts ─── */
+  .ctx-wrap { position: relative; height: 260px; }
+  .ctx {
+    position: absolute;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: white;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .ctx-a { width: 340px; height: 180px; top: 30px; left: 0;   background: #6366f1; z-index: 1; transform: rotate(-2deg);          opacity: 0.92; }
+  .ctx-b { width: 340px; height: 180px; top: 60px; left: 200px; background: #8b5cf6; z-index: 3; transform: rotate(1.5deg) scale(1.04); }
+  .ctx-c { width: 280px; height: 160px; top: 20px; left: 420px; background: #ec4899; z-index: 2; transform: rotate(-1deg);          opacity: 0.95; }
+  .ctx-d { width: 220px; height: 130px; top: 90px; left: 560px; background: #f59e0b; z-index: 4; transform: rotate(2.5deg); }
+</style>
+</head>
+<body>
+
+<!-- ────────────────────────────────────────────────
+     Test 1: Fixed nav with backdrop-filter blur
+────────────────────────────────────────────────── -->
+<header class="site-nav">
+  <div class="nav-inner">
+    <div class="nav-logo">WebSnap</div>
+    <div class="nav-links">
+      <span>Products</span>
+      <span>Docs</span>
+      <span>Pricing</span>
+      <span>Blog</span>
+    </div>
+    <div class="nav-cta">Get started</div>
+  </div>
+</header>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 2: background-clip: text (gradient text)
+────────────────────────────────────────────────── -->
+<section class="section" style="padding-top: 80px;">
+  <div class="label">Test 1 &amp; 2 — Fixed nav (backdrop-filter blur) + background-clip: text</div>
+  <h1 class="gradient-heading">Design beautifully, import perfectly.</h1>
+  <p class="gradient-sub">
+    The heading above uses <span class="inline-grad">background-clip: text</span> with a
+    transparent fill — one of the trickier CSS patterns to capture.
+    The nav above is <strong>position: fixed</strong> with <strong>backdrop-filter: blur(14px)</strong>.
+  </p>
+  <div class="pill-row">
+    <div class="pill pill-indigo">background-clip: text</div>
+    <div class="pill pill-purple">-webkit-text-fill-color: transparent</div>
+    <div class="pill pill-pink">position: fixed</div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 3: clip-path shapes
+────────────────────────────────────────────────── -->
+<section class="section gray">
+  <div class="label">Test 3 — clip-path shapes (known limitation: full box renders, clip is lost)</div>
+  <div class="clip-row">
+    <div class="clip-item">
+      <div class="clip-box clip-circle">circle</div>
+      <div class="clip-lbl">circle(50%)</div>
+    </div>
+    <div class="clip-item">
+      <div class="clip-box clip-tri">triangle</div>
+      <div class="clip-lbl">polygon triangle</div>
+    </div>
+    <div class="clip-item">
+      <div class="clip-box clip-diamond">diamond</div>
+      <div class="clip-lbl">polygon diamond</div>
+    </div>
+    <div class="clip-item">
+      <div class="clip-box clip-arrow">arrow</div>
+      <div class="clip-lbl">polygon arrow</div>
+    </div>
+    <div class="clip-item">
+      <div class="clip-box clip-star">star</div>
+      <div class="clip-lbl">polygon star</div>
+    </div>
+    <div class="clip-note">
+      <strong>Expected behavior</strong>
+      Figma has no clip-path equivalent. The importer renders each element's
+      full bounding box — shapes appear as squares/rectangles. This is a
+      known limitation. clip-path would need to be approximated with masks.
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 4: Nested grid + flex dashboard
+────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="label">Test 4 — Nested grid + flex (dashboard: stat row + 2-col content grid)</div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-bar" style="background: linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+      <div class="stat-lbl">Total Revenue</div>
+      <div class="stat-val">$84,231</div>
+      <div class="stat-delta up">↑ 12.4% from last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-bar" style="background: linear-gradient(90deg,#10b981,#34d399);"></div>
+      <div class="stat-lbl">Active Users</div>
+      <div class="stat-val">12,491</div>
+      <div class="stat-delta up">↑ 8.1% from last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-bar" style="background: linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+      <div class="stat-lbl">Conversion Rate</div>
+      <div class="stat-val">3.47%</div>
+      <div class="stat-delta down">↓ 0.3% from last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-bar" style="background: linear-gradient(90deg,#ec4899,#f43f5e);"></div>
+      <div class="stat-lbl">Avg Order Value</div>
+      <div class="stat-val">$127</div>
+      <div class="stat-delta up">↑ 4.2% from last month</div>
+    </div>
+  </div>
+
+  <div class="dash-content">
+    <div class="dash-card">
+      <div class="dash-title">Revenue over time</div>
+      <div class="dash-sub">Last 30 days</div>
+      <div class="chart-area">
+        <div class="chart-bars">
+          <div class="bar" style="height:38%;"></div>
+          <div class="bar" style="height:55%;"></div>
+          <div class="bar" style="height:45%;"></div>
+          <div class="bar" style="height:72%;"></div>
+          <div class="bar" style="height:60%;"></div>
+          <div class="bar" style="height:88%;"></div>
+          <div class="bar hi" style="height:76%;"></div>
+          <div class="bar" style="height:82%;"></div>
+          <div class="bar" style="height:91%;"></div>
+          <div class="bar" style="height:70%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">Recent activity</div>
+      <div class="activity">
+        <div class="act-row">
+          <div class="act-dot" style="background:#10b981;"></div>
+          <div class="act-txt">New order — Sarah K.</div>
+          <div class="act-time">2m ago</div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:#6366f1;"></div>
+          <div class="act-txt">Signup: mike@example.com</div>
+          <div class="act-time">14m ago</div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:#f59e0b;"></div>
+          <div class="act-txt">Payment failed — retry pending</div>
+          <div class="act-time">1h ago</div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:#ef4444;"></div>
+          <div class="act-txt">Server 503 — resolved</div>
+          <div class="act-time">3h ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 5: overflow: hidden carousel
+────────────────────────────────────────────────── -->
+<section class="section gray">
+  <div class="label">Test 5 — overflow: hidden carousel (6 cards, only ~4 visible — should clip)</div>
+  <div class="carousel-wrap">
+    <div class="carousel-track">
+      <div class="c-card" style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+        <div class="c-title">Design Systems</div>
+        <div class="c-sub">12 components · Updated today</div>
+      </div>
+      <div class="c-card" style="background: linear-gradient(135deg,#10b981,#059669);">
+        <div class="c-title">User Research</div>
+        <div class="c-sub">4 sessions this week</div>
+      </div>
+      <div class="c-card" style="background: linear-gradient(135deg,#f59e0b,#d97706);">
+        <div class="c-title">Prototyping</div>
+        <div class="c-sub">3 active prototypes</div>
+      </div>
+      <div class="c-card" style="background: linear-gradient(135deg,#ec4899,#be185d);">
+        <div class="c-title">Handoff</div>
+        <div class="c-sub">Ready for dev review</div>
+      </div>
+      <div class="c-card" style="background: linear-gradient(135deg,#0ea5e9,#0284c7);">
+        <div class="c-title">Analytics</div>
+        <div class="c-sub">8.3k visits this month</div>
+      </div>
+      <div class="c-card" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9);">
+        <div class="c-title">Content</div>
+        <div class="c-sub">24 published pages</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 6: CSS filter effects
+────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="label">Test 6 — CSS filter (blur + drop-shadow supported · grayscale/sepia/hue-rotate are not)</div>
+  <div class="filter-grid">
+    <div class="f-item">
+      <div class="f-box"></div>
+      <div class="f-lbl">none (baseline)</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: blur(5px);"></div>
+      <div class="f-lbl">blur(5px) ✓</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: drop-shadow(4px 8px 14px rgba(99,102,241,0.55));"></div>
+      <div class="f-lbl">drop-shadow ✓</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: grayscale(100%);"></div>
+      <div class="f-lbl">grayscale(100%) ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: sepia(80%);"></div>
+      <div class="f-lbl">sepia(80%) ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: brightness(160%);"></div>
+      <div class="f-lbl">brightness(160%) ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: hue-rotate(90deg);"></div>
+      <div class="f-lbl">hue-rotate(90deg) ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: saturate(200%);"></div>
+      <div class="f-lbl">saturate(200%) ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: contrast(180%) brightness(110%);"></div>
+      <div class="f-lbl">contrast+brightness ✗</div>
+    </div>
+    <div class="f-item">
+      <div class="f-box" style="filter: blur(2px) drop-shadow(2px 4px 8px rgba(0,0,0,0.3));"></div>
+      <div class="f-lbl">blur + shadow ✓✓</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 7: Multi-layer backgrounds
+────────────────────────────────────────────────── -->
+<section class="section gray">
+  <div class="label">Test 7 — Multi-layer backgrounds (gradient over color · radial over linear · dual gradient)</div>
+  <div class="bg-grid">
+    <div class="bg-card" style="background: linear-gradient(160deg, rgba(99,102,241,0.88), rgba(139,92,246,0.92)), #c7d2fe;">
+      <div class="bg-label">Gradient over color</div>
+      <div class="bg-desc">linear-gradient + solid bg-color</div>
+    </div>
+    <div class="bg-card" style="background: linear-gradient(0deg, rgba(0,0,0,0.42) 0%, transparent 100%), linear-gradient(135deg, #f59e0b, #ef4444);">
+      <div class="bg-label">Gradient over gradient</div>
+      <div class="bg-desc">dark overlay + color gradient</div>
+    </div>
+    <div class="bg-card" style="background: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.28) 0%, transparent 55%), linear-gradient(135deg, #10b981, #0ea5e9);">
+      <div class="bg-label">Radial + linear</div>
+      <div class="bg-desc">highlight spot + color gradient</div>
+    </div>
+    <div class="bg-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.9) 0%, rgba(236,72,153,0.9) 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 0, transparent 50%); background-size: 100% 100%, 10px 10px;">
+      <div class="bg-label">Gradient + pattern</div>
+      <div class="bg-desc">color gradient + repeating stripes</div>
+    </div>
+    <div class="bg-card" style="background: conic-gradient(from 180deg at 50% 50%, #6366f1 0deg, #8b5cf6 90deg, #ec4899 180deg, #f59e0b 270deg, #6366f1 360deg);">
+      <div class="bg-label">Conic gradient</div>
+      <div class="bg-desc">conic-gradient() full wheel</div>
+    </div>
+    <div class="bg-card" style="background: linear-gradient(135deg, #0f172a, #1e293b); border: 1px solid rgba(255,255,255,0.08);">
+      <div class="bg-label" style="color: rgba(255,255,255,0.9);">Dark gradient</div>
+      <div class="bg-desc" style="color: rgba(255,255,255,0.45);">deep navy gradient</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 8: CSS grid-template-areas
+────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="label">Test 8 — grid-template-areas (named regions: topbar, sidebar, main, widget, foot)</div>
+  <div class="area-grid">
+    <div class="a-topbar">
+      <div style="width:28px;height:28px;background:rgba(255,255,255,0.2);border-radius:6px;"></div>
+      App Shell · grid-area: topbar
+    </div>
+    <div class="a-sidebar">
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.07em;padding:6px 10px 10px;">Menu</div>
+      <div class="sb-item active">Dashboard</div>
+      <div class="sb-item">Analytics</div>
+      <div class="sb-item">Projects</div>
+      <div class="sb-item">Settings</div>
+    </div>
+    <div class="a-main">
+      <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:8px;">Main content — grid-area: main</div>
+      <div style="font-size:13px;color:#6b7280;line-height:1.6;">This panel spans two rows as defined by grid-template-areas. The browser resolves exact pixel positions for each named region which are then captured via getBoundingClientRect.</div>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <div style="flex:1;height:48px;background:#f3f4f6;border-radius:8px;"></div>
+        <div style="flex:1;height:48px;background:#f3f4f6;border-radius:8px;"></div>
+        <div style="flex:1;height:48px;background:#f3f4f6;border-radius:8px;"></div>
+      </div>
+    </div>
+    <div class="a-widget">
+      <div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:6px;">Widget — aside</div>
+      <div style="font-size:28px;font-weight:700;color:#111827;line-height:1;">94%</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;">Uptime this month</div>
+      <div style="margin-top:10px;height:4px;background:#d1fae5;border-radius:2px;overflow:hidden;">
+        <div style="height:100%;width:94%;background:#10b981;border-radius:2px;"></div>
+      </div>
+    </div>
+    <div class="a-foot">
+      grid-area: foot · WebSnap Test · 2026
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 9: Text truncation
+────────────────────────────────────────────────── -->
+<section class="section gray">
+  <div class="label">Test 9 — text truncation (ellipsis + line-clamp — expected: text overflows in Figma)</div>
+  <div class="trunc-grid">
+    <div class="trunc-card">
+      <div class="trunc-lbl">white-space: nowrap + ellipsis</div>
+      <div class="t-ellipsis">
+        This is a very long sentence that gets cut off with an ellipsis because it overflows its single-line container box
+      </div>
+      <div class="trunc-note">Browser clips at container edge. Importer captures full text — no truncation in Figma.</div>
+    </div>
+    <div class="trunc-card">
+      <div class="trunc-lbl">-webkit-line-clamp: 3 lines</div>
+      <div class="t-clamp3">
+        This paragraph has too much content to show in three lines. The browser clips it gracefully with an ellipsis at the end. But the captured text is the full string, so in Figma it wraps to its natural height. Lorem ipsum dolor sit amet consectetur adipiscing elit.
+      </div>
+      <div class="trunc-note">Expected: text runs longer in Figma than on screen.</div>
+    </div>
+    <div class="trunc-card">
+      <div class="trunc-lbl">-webkit-line-clamp: 2 lines</div>
+      <div class="t-clamp2">
+        A two-line clamp cuts off everything after the second line. This trailing text is invisible in the browser but will render fully in Figma since we capture the full textContent, not the clamped display.
+      </div>
+      <div class="trunc-note">Expected: text overflows card bottom in Figma.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────
+     Test 10: Stacking contexts (transform + opacity + z-index)
+────────────────────────────────────────────────── -->
+<section class="section" style="padding-bottom: 100px;">
+  <div class="label">Test 10 — Stacking contexts (transform + opacity isolate z layers — z-index sort + rotation)</div>
+  <div class="ctx-wrap">
+    <!-- DOM order: a, b, c, d — but z-index order should be: a(1), c(2), b(3), d(4) -->
+    <div class="ctx ctx-a">z:1 · rotate(−2°) · opacity 0.92</div>
+    <div class="ctx ctx-b">z:3 · rotate(+1.5°) · scale(1.04)</div>
+    <div class="ctx ctx-c">z:2 · rotate(−1°) · opacity 0.95</div>
+    <div class="ctx ctx-d">z:4 · rotate(+2.5°) · on top</div>
+  </div>
+</section>
+
+</body>
+</html>

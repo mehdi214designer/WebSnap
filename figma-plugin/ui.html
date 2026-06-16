@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSnap</title>
+  <style>
+    :root {
+      --bg: #0E0F12;
+      --bg-elev: #16181D;
+      --bg-elev-2: #1D2026;
+      --border: #2A2E36;
+      --border-strong: #3A3F4A;
+      --text: #F3F4F6;
+      --text-dim: #9CA3AF;
+      --text-faint: #6B7280;
+      --accent: #6366F1;
+      --accent-hover: #5458E5;
+      --accent-soft: rgba(99, 102, 241, 0.14);
+      --success: #22C55E;
+      --warn: #F59E0B;
+      --danger: #EF4444;
+      --radius-sm: 6px;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    button {
+      font: inherit; color: inherit; background: none; border: none; cursor: pointer;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 16px;
+      gap: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      display: grid;
+      grid-template-columns: 8px 8px;
+      grid-template-rows: 8px 8px;
+      gap: 2px;
+    }
+    .logo span { border-radius: 1.5px; }
+    .logo span:nth-child(1) { background: #F43F5E; }
+    .logo span:nth-child(2) { background: #38BDF8; }
+    .logo span:nth-child(3) { background: #6366F1; }
+    .logo span:nth-child(4) { background: #22C55E; }
+
+    .title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .version {
+      color: var(--text-faint);
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+    .tab {
+      flex: 1;
+      padding: 7px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      transition: all 0.15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      background: var(--bg-elev-2);
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .drop-zone {
+      flex: 1;
+      border: 2px dashed var(--border-strong);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px;
+      color: var(--text-dim);
+      transition: all 0.15s;
+      text-align: center;
+      cursor: pointer;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    .drop-icon {
+      width: 36px;
+      height: 36px;
+      color: var(--text-faint);
+    }
+    .drop-zone.dragover .drop-icon { color: var(--accent); }
+
+    .drop-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .drop-sub {
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+
+    .or {
+      text-align: center;
+      color: var(--text-faint);
+      font-size: 11px;
+      position: relative;
+    }
+    .or::before, .or::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 30%;
+      height: 1px;
+      background: var(--border);
+    }
+    .or::before { left: 0; }
+    .or::after { right: 0; }
+
+    .paste-area {
+      width: 100%;
+      min-height: 80px;
+      max-height: 140px;
+      padding: 10px 12px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      resize: vertical;
+      outline: none;
+    }
+    .paste-area:focus {
+      border-color: var(--accent);
+    }
+    .paste-area::placeholder {
+      color: var(--text-faint);
+    }
+
+    .file-input { display: none; }
+
+    .preview {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-host {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+
+    .preview-clear {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-clear:hover { background: var(--bg-elev-2); color: var(--text); }
+
+    .preview-meta {
+      display: flex;
+      gap: 12px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .opt-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .opt-label {
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .opt-hint {
+      font-size: 10px;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+
+    .switch {
+      position: relative;
+      width: 30px;
+      height: 18px;
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 14px;
+      height: 14px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: all 0.15s;
+    }
+    .switch.on {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .switch.on::after {
+      left: 13px;
+      background: white;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { background: var(--bg-elev-2); color: var(--text-faint); cursor: not-allowed; }
+    .btn-secondary { background: var(--bg-elev); border: 1px solid var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--bg-elev-2); }
+
+    .progress {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-elev-2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.25s;
+      border-radius: 2px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      max-width: 80%;
+      text-align: center;
+    }
+    .toast.visible { opacity: 1; }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+
+    .panel.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="title">WebSnap</span>
+        <span class="version">v0.4.7</span>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="drop">Import</button>
+      <button class="tab" data-tab="paste">Paste</button>
+      <button class="tab" data-tab="help">Help</button>
+    </div>
+
+    <!-- Drop tab -->
+    <section class="panel" id="panel-drop">
+      <div class="drop-zone" id="drop-zone">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <div class="drop-title">Drop a .wsnap or .html file</div>
+        <div class="drop-sub">or click to browse</div>
+      </div>
+      <input type="file" class="file-input" id="file-input" accept=".wsnap,.json,.html,.htm,application/json,text/html" />
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:8px;">
+        <span style="font-size:11px; color:var(--text-dim);">HTML render width</span>
+        <select id="html-viewport" style="background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; outline:none;">
+          <option value="1920">1920px</option>
+          <option value="1440" selected>1440px</option>
+          <option value="1024">1024px</option>
+          <option value="768">768px</option>
+          <option value="390">390px</option>
+        </select>
+      </div>
+      <iframe id="html-sandbox" sandbox="allow-same-origin" style="position:fixed; left:-99999px; top:0; width:1440px; height:900px; border:0; opacity:0; pointer-events:none; z-index:-1;"></iframe>
+    </section>
+
+    <!-- Paste tab -->
+    <section class="panel hidden" id="panel-paste">
+      <textarea class="paste-area" id="paste-area" placeholder="Paste your .wsnap JSON here (Cmd/Ctrl+V)..."></textarea>
+      <button class="btn btn-secondary" id="paste-load">Load pasted data</button>
+    </section>
+
+    <!-- Help tab -->
+    <section class="panel hidden" id="panel-help">
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:12px; color:var(--text-dim); line-height:1.6;">
+        <p style="color:var(--text); font-weight:600;">Two ways to use WebSnap</p>
+        <p style="color:var(--text); font-weight:600; margin-top:4px;">A. From a live webpage</p>
+        <p>1. Install the WebSnap Chrome extension on any page</p>
+        <p>2. Click the WebSnap icon, pick viewport, hit Capture</p>
+        <p>3. Download the .wsnap file or copy to clipboard</p>
+        <p>4. Drop the file or paste here</p>
+        <p style="color:var(--text); font-weight:600; margin-top:4px;">B. From a local HTML file</p>
+        <p>1. Drop your .html file directly onto the import zone</p>
+        <p>2. Plugin renders it in a hidden iframe and extracts layout</p>
+        <p>3. Same import pipeline runs</p>
+        <p style="color:var(--text-faint); margin-top:6px;">HTML upload works best with self-contained files (inline CSS, data: URI images). External CSS/images may not load.</p>
+      </div>
+    </section>
+
+    <!-- Preview + import (shown once data loaded) -->
+    <div id="ready" style="display:none; flex-direction:column; gap:10px;">
+      <div class="preview">
+        <div class="preview-header">
+          <span class="preview-host" id="preview-host"></span>
+          <button class="preview-clear" id="preview-clear" title="Clear">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="preview-meta" id="preview-meta"></div>
+      </div>
+
+      <div class="options">
+        <div class="opt-row">
+          <div>
+            <div class="opt-label">Clean up layers</div>
+            <div class="opt-hint">Flatten empty wrapper divs and name layers meaningfully. Recommended.</div>
+          </div>
+          <div class="switch on" data-opt="cleanLayers"></div>
+        </div>
+        <div class="opt-row">
+          <div>
+            <div class="opt-label">Use Auto Layout</div>
+            <div class="opt-hint">Off = pixel-perfect positions (recommended). On = editable flex layout, but spacing may drift.</div>
+          </div>
+          <div class="switch" data-opt="autoLayout"></div>
+        </div>
+        <div class="opt-row">
+          <div>
+            <div class="opt-label">Import images</div>
+            <div class="opt-hint">Off = placeholders only, smaller file, faster import.</div>
+          </div>
+          <div class="switch on" data-opt="images"></div>
+        </div>
+        <div class="opt-row">
+          <div>
+            <div class="opt-label">Apply effects</div>
+            <div class="opt-hint">Shadows, gradients, blurs.</div>
+          </div>
+          <div class="switch on" data-opt="effects"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="import-btn">Import to canvas</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress" id="progress-card" style="display:none;">
+      <div class="progress-label">
+        <span id="progress-text">Starting...</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---------- UI state ----------
+    const state = {
+      data: null,
+      options: { autoLayout: false, images: true, effects: true, cleanLayers: true }
+    };
+
+    const els = {
+      tabs: document.querySelectorAll('.tab'),
+      panels: { drop: document.getElementById('panel-drop'), paste: document.getElementById('panel-paste'), help: document.getElementById('panel-help') },
+      dropZone: document.getElementById('drop-zone'),
+      fileInput: document.getElementById('file-input'),
+      pasteArea: document.getElementById('paste-area'),
+      pasteLoad: document.getElementById('paste-load'),
+      ready: document.getElementById('ready'),
+      previewHost: document.getElementById('preview-host'),
+      previewMeta: document.getElementById('preview-meta'),
+      previewClear: document.getElementById('preview-clear'),
+      importBtn: document.getElementById('import-btn'),
+      switches: document.querySelectorAll('.switch'),
+      toast: document.getElementById('toast'),
+      progressCard: document.getElementById('progress-card'),
+      progressText: document.getElementById('progress-text'),
+      progressPct: document.getElementById('progress-pct'),
+      progressFill: document.getElementById('progress-fill')
+    };
+
+    // ---------- Tabs ----------
+    els.tabs.forEach(t => t.addEventListener('click', () => {
+      els.tabs.forEach(x => x.classList.toggle('active', x === t));
+      Object.entries(els.panels).forEach(([k, p]) => p.classList.toggle('hidden', k !== t.dataset.tab));
+    }));
+
+    // ---------- Drop zone ----------
+    els.dropZone.addEventListener('click', () => els.fileInput.click());
+    els.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); els.dropZone.classList.add('dragover'); });
+    els.dropZone.addEventListener('dragleave', () => els.dropZone.classList.remove('dragover'));
+    els.dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      els.dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+    els.fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) readFile(file);
+    });
+
+    function readFile(file) {
+      const r = new FileReader();
+      const name = (file.name || '').toLowerCase();
+      const isHtml = name.endsWith('.html') || name.endsWith('.htm') || file.type === 'text/html';
+      r.onload = () => {
+        if (isHtml) {
+          parseHtmlFile(r.result, file.name);
+        } else {
+          loadJSON(r.result, file.name);
+        }
+      };
+      r.onerror = () => toast('Could not read file', true);
+      r.readAsText(file);
+    }
+
+    // ---------- HTML parsing path ----------
+    async function parseHtmlFile(htmlString, fileName) {
+      toast('Rendering HTML...');
+      const iframe = document.getElementById('html-sandbox');
+      const viewportWidth = parseInt(document.getElementById('html-viewport').value, 10) || 1440;
+
+      try {
+        // Set iframe size to target viewport.
+        // Height = 900px (not 5000px) — keeps 100vh realistic so min-height:100vh
+        // doesn't inflate sections to 5000px, pushing all content below the fold.
+        // getBoundingClientRect still returns correct absolute y-positions for content
+        // beyond 900px since we add win.scrollY (which is 0 on a static load).
+        iframe.style.width = viewportWidth + 'px';
+        iframe.style.height = '900px';
+
+        // Use srcdoc to load the HTML
+        await new Promise((resolve, reject) => {
+          const onLoad = () => { iframe.removeEventListener('load', onLoad); resolve(); };
+          const onErr = (e) => { iframe.removeEventListener('error', onErr); reject(e); };
+          iframe.addEventListener('load', onLoad);
+          iframe.addEventListener('error', onErr);
+          iframe.srcdoc = htmlString;
+          setTimeout(resolve, 4000); // safety timeout
+        });
+
+        // Wait for fonts and a tick for layout
+        try { await iframe.contentDocument.fonts.ready; } catch (_e) {}
+        await new Promise(r => setTimeout(r, 300));
+
+        const win = iframe.contentWindow;
+        const doc = iframe.contentDocument;
+        if (!doc || !doc.body) {
+          toast('HTML has no body', true);
+          return;
+        }
+
+        const tree = buildHtmlTree(doc.body, win);
+        const docW = Math.max(viewportWidth, doc.body.scrollWidth);
+
+        // Compute content height from the captured rects rather than scrollHeight.
+        // scrollHeight is unreliable in the sandboxed iframe — use tree rect traversal.
+        // The tree rects are ground truth — use the deepest element's bottom edge.
+        // Special case: if a container extends 300px+ below its deepest child it's
+        // almost certainly inflated by min-height:100vh — use children's bottom instead.
+        const docH = (function() {
+          function maxBottom(n) {
+            if (!n) return 0;
+            let childB = 0;
+            if (n.children) n.children.forEach(c => { const cb = maxBottom(c); if (cb > childB) childB = cb; });
+            if (!n.rect) return childB;
+            const ownB = n.rect.y + n.rect.h;
+            if (childB > 0 && ownB > childB + 300) return childB;
+            return Math.max(childB, ownB);
+          }
+          const treeBottom = maxBottom(tree);
+          return Math.max(900, treeBottom > 0 ? treeBottom + 80 : doc.documentElement.scrollHeight);
+        })();
+
+        const wsnap = {
+          version: '0.1',
+          url: 'file://' + (fileName || 'uploaded.html'),
+          title: doc.title || fileName || 'HTML upload',
+          viewport: { width: viewportWidth, height: 900 },
+          document: { width: docW, height: docH },
+          captured_at: new Date().toISOString(),
+          tree: tree,
+          assets: {},
+          stats: { nodes: countNodes(tree), images: 0 }
+        };
+        state.data = wsnap;
+        showPreview();
+        toast('HTML parsed: ' + wsnap.stats.nodes + ' nodes');
+      } catch (e) {
+        console.error('HTML parse failed', e);
+        toast('HTML parse failed: ' + (e && e.message ? e.message : e), true);
+      }
+    }
+
+    function countNodes(n) {
+      if (!n) return 0;
+      let c = 1;
+      if (n.children) n.children.forEach(k => c += countNodes(k));
+      return c;
+    }
+
+    const SKIP_HTML_TAGS = new Set(['SCRIPT','STYLE','NOSCRIPT','META','LINK','HEAD','TITLE','BR']);
+    const INLINE_TAGS = new Set(['SPAN','A','STRONG','B','EM','I','U','SMALL','MARK','CODE','SUB','SUP','LABEL','TIME','CITE','Q','KBD','ABBR']);
+    const INLINE_DISPLAYS = new Set(['inline','inline-block','inline-flex']);
+    const HTML_STYLE_KEYS = [
+      'display','position','opacity','visibility',
+      'background-color','background-image','background-size','background-position','background-repeat',
+      'background-clip','-webkit-background-clip',
+      'color',
+      'font-family','font-size','font-weight','font-style','line-height','letter-spacing','text-align',
+      'text-transform','text-decoration','text-decoration-line','text-decoration-color',
+      'text-shadow','word-spacing','white-space',
+      'border-top-width','border-right-width','border-bottom-width','border-left-width',
+      'border-top-color','border-right-color','border-bottom-color','border-left-color',
+      'border-top-style','border-right-style','border-bottom-style','border-left-style',
+      'border-top-left-radius','border-top-right-radius','border-bottom-left-radius','border-bottom-right-radius',
+      'outline-width','outline-style','outline-color','outline-offset',
+      'box-shadow','backdrop-filter','-webkit-backdrop-filter','mix-blend-mode',
+      'flex-direction','flex-wrap','flex-grow','flex-shrink','flex-basis','align-self',
+      'justify-content','align-items','align-content','gap','row-gap','column-gap',
+      'grid-template-columns','grid-template-rows','grid-auto-flow',
+      'object-fit','object-position',
+      'padding-top','padding-right','padding-bottom','padding-left',
+      'overflow','overflow-x','overflow-y',
+      'transform','filter','z-index','cursor'
+    ];
+
+    function buildHtmlTree(el, win) {
+      if (!el || el.nodeType !== 1) return null;
+      if (SKIP_HTML_TAGS.has(el.tagName)) return null;
+      const styles = win.getComputedStyle(el);
+      if (styles.display === 'none' || styles.visibility === 'hidden') return null;
+      if (parseFloat(styles.opacity) === 0) return null;
+
+      if (styles.display === 'contents') {
+        const flat = [];
+        for (const c of el.children) {
+          const cn = buildHtmlTree(c, win);
+          if (cn) flat.push(cn);
+        }
+        return { __flatten: true, children: flat };
+      }
+
+      const rect = el.getBoundingClientRect();
+      const docX = rect.left + win.scrollX;
+      const docY = rect.top + win.scrollY;
+      if (rect.width === 0 && rect.height === 0 && el.tagName !== 'IMG') return null;
+
+      const node = {
+        tag: el.tagName.toLowerCase(),
+        rect: { x: docX, y: docY, w: rect.width, h: rect.height },
+        styles: pickHtmlStyles(styles),
+        text: null,
+        children: []
+      };
+      if (el.id) node.id = el.id;
+      if (el.getAttribute && el.getAttribute('alt')) node.alt = el.getAttribute('alt');
+      if (el.getAttribute && el.getAttribute('aria-label')) node.ariaLabel = el.getAttribute('aria-label');
+      if (el.getAttribute && el.getAttribute('role')) node.role = el.getAttribute('role');
+      if (typeof el.className === 'string' && el.className) node.class = el.className;
+
+      // Image handling — just record src, no fetch
+      if (el.tagName === 'IMG' && el.src) {
+        if (el.src.startsWith('data:')) {
+          // Inline image: skip data: in assets, embed via image fill later if we want
+          node.image = { id: null, src: el.src };
+        } else {
+          node.image = { id: null, src: el.src };
+        }
+      }
+
+      // Background gradient detection — multi-layer support
+      const bgImg = styles.backgroundImage;
+      if (bgImg && bgImg !== 'none' && bgImg.includes('gradient')) {
+        // Split by top-level commas only (ignore commas inside parens like rgba(...))
+        const _layers = [];
+        let _depth = 0, _start = 0;
+        for (let _i = 0; _i < bgImg.length; _i++) {
+          if (bgImg[_i] === '(') _depth++;
+          else if (bgImg[_i] === ')') _depth--;
+          else if (bgImg[_i] === ',' && _depth === 0) {
+            _layers.push(bgImg.slice(_start, _i).trim());
+            _start = _i + 1;
+          }
+        }
+        _layers.push(bgImg.slice(_start).trim());
+        const _gradients = [];
+        for (const _layer of _layers) {
+          if (!_layer.includes('gradient')) continue;
+          const _norm = _layer.replace(/^repeating-/, '');
+          const _type = _norm.startsWith('linear') ? 'linear' : _norm.startsWith('radial') ? 'radial' : _norm.startsWith('conic') ? 'conic' : null;
+          if (!_type) continue;
+          const _idx = _layer.indexOf('(');
+          const _end = _layer.lastIndexOf(')');
+          if (_idx < 0 || _end < 0) continue;
+          _gradients.push({ type: _type, raw: _layer.slice(_idx + 1, _end) });
+        }
+        if (_gradients.length) {
+          node.styles.backgroundGradients = _gradients;
+          // Keep single-field alias for gradient-text and backward compat
+          node.styles.backgroundGradient = _gradients[0];
+        }
+      }
+
+      // SVG handling: capture source for editable vectors
+      if (el.tagName.toLowerCase() === 'svg' || (el.namespaceURI && el.namespaceURI.includes('svg'))) {
+        try {
+          node.svg = { source: new XMLSerializer().serializeToString(el) };
+        } catch (_e) {}
+        return node;
+      }
+
+      const inlineOnly = isInlineLayoutContainer(el, win);
+      if (inlineOnly) {
+        const txt = el.innerText || el.textContent || '';
+        if (txt.trim()) {
+          // Drill down to the element that actually carries the text styling (color etc.)
+          let textEl = el;
+          const target = txt.trim();
+          let guard = 0;
+          while (textEl.children && textEl.children.length >= 1 && guard < 20) {
+            guard++;
+            let next = null;
+            for (const c of textEl.children) {
+              if ((c.textContent || '').trim() === target) { next = c; break; }
+            }
+            if (next) textEl = next; else break;
+          }
+          const textStyles = textEl === el ? styles : win.getComputedStyle(textEl);
+          node.text = { content: txt, style: extractTextStyle(textStyles) };
+        }
+      } else {
+        // ::before decorative pseudo-element (renders behind children)
+        const beforeNode = capturePseudoHtml(el, '::before', win);
+        if (beforeNode) node.children.push(beforeNode);
+
+        for (const child of el.children) {
+          const cn = buildHtmlTree(child, win);
+          if (!cn) continue;
+          if (cn.__flatten && Array.isArray(cn.children)) {
+            for (const g of cn.children) node.children.push(g);
+          } else {
+            node.children.push(cn);
+          }
+        }
+        // Direct text nodes (mixed content)
+        let directText = '';
+        for (const ch of el.childNodes) {
+          if (ch.nodeType === 3) directText += ch.textContent;
+        }
+        if (directText.trim()) {
+          node.text = { content: directText, style: extractTextStyle(styles) };
+        }
+
+        // ::after decorative pseudo-element (renders on top of children)
+        const afterNode = capturePseudoHtml(el, '::after', win);
+        if (afterNode) node.children.push(afterNode);
+      }
+      return node;
+    }
+
+    // Capture a ::before or ::after pseudo-element as a plain node if it paints a background.
+    // Text-content pseudos (like ::before { content: "NEW" }) are skipped — the browser
+    // doesn't expose a bounding rect for them, so placement would be unreliable.
+    function capturePseudoHtml(el, which, win) {
+      let ps;
+      try { ps = win.getComputedStyle(el, which); } catch (_e) { return null; }
+      if (!ps) return null;
+      const content = ps.content;
+      if (!content || content === 'none' || content === 'normal') return null;
+
+      const bgColor = ps.backgroundColor;
+      const bgImage = ps.backgroundImage;
+      const hasBgColor = bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent';
+      const hasBgImage = bgImage && bgImage !== 'none';
+      if (!hasBgColor && !hasBgImage) return null;
+
+      const parentRect = el.getBoundingClientRect();
+      if (parentRect.width === 0 && parentRect.height === 0) return null;
+
+      let w = parseFloat(ps.width) || 0;
+      let h = parseFloat(ps.height) || 0;
+      const pos = ps.position;
+      let x = parentRect.left + win.scrollX;
+      let y = parentRect.top + win.scrollY;
+
+      if (pos === 'absolute' || pos === 'fixed') {
+        const L = ps.left, R = ps.right, T = ps.top, B = ps.bottom;
+        if (!w && L !== 'auto' && R !== 'auto') w = parentRect.width - parseFloat(L) - parseFloat(R);
+        if (!h && T !== 'auto' && B !== 'auto') h = parentRect.height - parseFloat(T) - parseFloat(B);
+        if (L !== 'auto') x = parentRect.left + win.scrollX + parseFloat(L);
+        else if (R !== 'auto') x = parentRect.right + win.scrollX - parseFloat(R) - (w || 0);
+        if (T !== 'auto') y = parentRect.top + win.scrollY + parseFloat(T);
+        else if (B !== 'auto') y = parentRect.bottom + win.scrollY - parseFloat(B) - (h || 0);
+      }
+      if (!w) w = parentRect.width;
+      if (!h) h = parentRect.height;
+      if (w <= 0 || h <= 0) return null;
+      // Skip mis-measured oversized pseudos
+      if (w > parentRect.width * 4 && h > parentRect.height * 4) return null;
+
+      const styles = {};
+      if (hasBgColor) styles.backgroundColor = bgColor;
+      if (pos) styles.position = pos;
+      ['border-top-left-radius','border-top-right-radius','border-bottom-left-radius','border-bottom-right-radius'].forEach(function(k) {
+        const v = ps.getPropertyValue(k);
+        if (v && v !== '0px') styles[camelize(k)] = v;
+      });
+      const op = ps.opacity;
+      if (op && op !== '1') styles.opacity = op;
+      if (ps.boxShadow && ps.boxShadow !== 'none') styles.boxShadow = ps.boxShadow;
+      if (ps.mixBlendMode && ps.mixBlendMode !== 'normal') styles.mixBlendMode = ps.mixBlendMode;
+
+      const node = {
+        tag: 'pseudo',
+        class: 'pseudo' + which.replace(/:/g, '-'),
+        rect: { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) },
+        styles: styles, text: null, image: null, svg: null, children: []
+      };
+      // Gradient background — multi-layer support (url() assets skipped in HTML upload)
+      if (hasBgImage && bgImage.includes('gradient')) {
+        const _players = [];
+        let _pd = 0, _ps = 0;
+        for (let _pi = 0; _pi < bgImage.length; _pi++) {
+          if (bgImage[_pi] === '(') _pd++;
+          else if (bgImage[_pi] === ')') _pd--;
+          else if (bgImage[_pi] === ',' && _pd === 0) {
+            _players.push(bgImage.slice(_ps, _pi).trim());
+            _ps = _pi + 1;
+          }
+        }
+        _players.push(bgImage.slice(_ps).trim());
+        const _pgrads = [];
+        for (const _pl of _players) {
+          if (!_pl.includes('gradient')) continue;
+          const _pn = _pl.replace(/^repeating-/, '');
+          const _pt = _pn.startsWith('linear') ? 'linear' : _pn.startsWith('radial') ? 'radial' : _pn.startsWith('conic') ? 'conic' : null;
+          if (!_pt) continue;
+          const _pi2 = _pl.indexOf('(');
+          const _pe = _pl.lastIndexOf(')');
+          if (_pi2 < 0 || _pe < 0) continue;
+          _pgrads.push({ type: _pt, raw: _pl.slice(_pi2 + 1, _pe) });
+        }
+        if (_pgrads.length) {
+          node.styles.backgroundGradients = _pgrads;
+          node.styles.backgroundGradient = _pgrads[0];
+        }
+      }
+      if (!hasBgColor && !node.styles.backgroundGradient) return null;
+      return node;
+    }
+
+    function isInlineLayoutContainer(el, win) {
+      const ps = win.getComputedStyle(el);
+      if (ps.display === 'flex' || ps.display === 'inline-flex' || ps.display === 'grid' || ps.display === 'inline-grid') return false;
+      // Media descendants mean this isn't a pure text container
+      if (el.querySelector('img, svg, video, canvas, picture, input, textarea, select, button, iframe')) return false;
+      const descendants = el.querySelectorAll('*');
+      for (let i = 0; i < descendants.length; i++) {
+        const bg = win.getComputedStyle(descendants[i]).backgroundImage;
+        if (bg && bg !== 'none' && bg.indexOf('url(') >= 0) return false;
+      }
+      if (!el.children.length) return (el.textContent || '').trim().length > 0;
+      for (const c of el.children) {
+        if (INLINE_TAGS.has(c.tagName)) {
+          // An inline-block/inline-flex child with a visible background (e.g. a styled pill
+          // badge: <span class="badge">) needs its own frame — collapsing it to plain text
+          // would discard its background-color and border-radius.
+          const cs = win.getComputedStyle(c);
+          if ((cs.display === 'inline-block' || cs.display === 'inline-flex') &&
+              cs.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+            return false;
+          }
+          continue;
+        }
+        const cs = win.getComputedStyle(c);
+        if (!INLINE_DISPLAYS.has(cs.display)) return false;
+      }
+      return true;
+    }
+
+    function pickHtmlStyles(cs) {
+      const out = {};
+      const keepAuto = new Set(['overflow','overflow-x','overflow-y','cursor']);
+      const keepNormal = new Set(['font-weight','white-space']);
+      const keepBase = new Set(['display','position']);
+      for (const k of HTML_STYLE_KEYS) {
+        const v = cs.getPropertyValue(k);
+        if (!v) continue;
+        if (v !== 'normal' && v !== 'none' && v !== 'auto') {
+          out[camelize(k)] = v;
+        } else if ((keepAuto.has(k) && v === 'auto') || (keepNormal.has(k) && v === 'normal') || keepBase.has(k)) {
+          out[camelize(k)] = v;
+        }
+      }
+      return out;
+    }
+
+    function extractTextStyle(cs) {
+      return {
+        fontFamily: cs.fontFamily,
+        fontSize: parseFloat(cs.fontSize),
+        fontWeight: parseInt(cs.fontWeight, 10) || cs.fontWeight,
+        fontStyle: cs.fontStyle,
+        lineHeight: cs.lineHeight,
+        letterSpacing: cs.letterSpacing,
+        color: cs.color,
+        textAlign: cs.textAlign,
+        textTransform: cs.textTransform,
+        textDecoration: cs.textDecorationLine || cs.textDecoration,
+        whiteSpace: cs.whiteSpace
+      };
+    }
+
+    function camelize(s) {
+      return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    }
+
+    // ---------- Paste ----------
+    els.pasteLoad.addEventListener('click', () => {
+      const v = els.pasteArea.value.trim();
+      if (!v) return toast('Paste a WebSnap JSON first', true);
+      loadJSON(v, 'pasted');
+    });
+
+    // Allow direct paste anywhere in the plugin window
+    // Skip if the paste target is the textarea (user is intentionally pasting there)
+    document.addEventListener('paste', (e) => {
+      if (e.target === els.pasteArea) return;
+      const txt = (e.clipboardData || window.clipboardData).getData('text');
+      if (txt && txt.trim().startsWith('{') && txt.includes('"version"') && txt.includes('"tree"')) {
+        loadJSON(txt, 'pasted');
+      }
+    });
+
+    function loadJSON(str, source) {
+      let parsed;
+      try { parsed = JSON.parse(str); }
+      catch (e) { return toast('Invalid JSON', true); }
+      if (!parsed || !parsed.tree || !parsed.version) return toast('Not a WebSnap file', true);
+      state.data = parsed;
+      showPreview();
+    }
+
+    function showPreview() {
+      const d = state.data;
+      let host = 'untitled';
+      try { host = new URL(d.url).hostname; } catch {}
+      els.previewHost.textContent = host;
+      const kb = Math.round(JSON.stringify(d).length / 1024);
+      const nodes = (d.stats && d.stats.nodes != null) ? d.stats.nodes : '?';
+      const imgs = (d.stats && d.stats.images != null) ? d.stats.images : Object.keys(d.assets || {}).length;
+      els.previewMeta.innerHTML = `
+        <span>${d.viewport.width}x${d.viewport.height}px</span>
+        <span>${nodes} nodes</span>
+        <span>${imgs} imgs</span>
+        <span>${kb}KB</span>
+      `;
+      // Heads-up for very large captures so the wait isn't a surprise
+      if (typeof nodes === 'number' && nodes > 3000) {
+        const warn = document.createElement('div');
+        warn.style.cssText = 'font-size:11px;color:var(--warn);margin-top:6px;';
+        warn.textContent = 'Large page (' + nodes + ' layers) — import may take a minute and Figma may lag briefly.';
+        els.previewMeta.appendChild(warn);
+      }
+      els.ready.style.display = 'flex';
+    }
+
+    els.previewClear.addEventListener('click', () => {
+      state.data = null;
+      els.ready.style.display = 'none';
+      els.pasteArea.value = '';
+      els.fileInput.value = '';
+    });
+
+    // ---------- Options ----------
+    els.switches.forEach(s => s.addEventListener('click', () => {
+      const opt = s.dataset.opt;
+      state.options[opt] = !state.options[opt];
+      s.classList.toggle('on', state.options[opt]);
+    }));
+
+    // ---------- Import ----------
+    els.importBtn.addEventListener('click', async () => {
+      if (!state.data) return toast('Load a WebSnap file first', true);
+      els.importBtn.disabled = true;
+      els.progressCard.style.display = 'flex';
+      // Convert any WebP/AVIF assets to PNG first — Figma's createImage can't decode them.
+      // This also fixes older .wsnap files captured before the background converted formats.
+      setProgress(1, 'Preparing images...');
+      try {
+        await convertUnsupportedAssets(state.data);
+      } catch (e) { console.warn('asset conversion skipped', e); }
+      setProgress(2, 'Sending to canvas...');
+      parent.postMessage({
+        pluginMessage: { type: 'import', data: state.data, options: state.options }
+      }, '*');
+    });
+
+    async function convertUnsupportedAssets(data) {
+      if (!data || !data.assets) return;
+      const ids = Object.keys(data.assets);
+      let converted = 0;
+      for (const id of ids) {
+        const uri = data.assets[id];
+        if (!uri || typeof uri !== 'string') continue;
+        // Only raster formats Figma can't decode
+        if (uri.startsWith('data:image/webp') || uri.startsWith('data:image/avif') ||
+            uri.startsWith('data:image/jxl') || uri.startsWith('data:image/heic') || uri.startsWith('data:image/heif')) {
+          try {
+            const png = await dataUriToPng(uri);
+            if (png) { data.assets[id] = png; converted++; }
+          } catch (e) {}
+        }
+      }
+      if (converted) toast('Converted ' + converted + ' image(s) for Figma');
+    }
+
+    function dataUriToPng(uri) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || 1;
+            canvas.height = img.naturalHeight || 1;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = uri;
+      });
+    }
+
+    // ---------- Messages from sandbox ----------
+    window.addEventListener('message', (e) => {
+      const msg = e.data && e.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'progress') setProgress(msg.pct, msg.label);
+      else if (msg.type === 'done') {
+        setProgress(100, 'Done');
+        let toastMsg = `Imported ${msg.nodes} layers`;
+        if (msg.missingFonts && msg.missingFonts.length) {
+          toastMsg += `. Install for fidelity: ${msg.missingFonts.slice(0, 2).join(', ')}`;
+          if (msg.missingFonts.length > 2) toastMsg += ` +${msg.missingFonts.length - 2}`;
+        }
+        toast(toastMsg);
+        setTimeout(() => {
+          els.progressCard.style.display = 'none';
+          els.importBtn.disabled = false;
+          setProgress(0, '');
+        }, 1200);
+      } else if (msg.type === 'error') {
+        toast('Import failed: ' + msg.error, true);
+        els.progressCard.style.display = 'none';
+        els.importBtn.disabled = false;
+      }
+    });
+
+    function setProgress(pct, label) {
+      els.progressFill.style.width = pct + '%';
+      els.progressPct.textContent = Math.round(pct) + '%';
+      if (label) els.progressText.textContent = label;
+    }
+
+    function toast(msg, isError) {
+      els.toast.textContent = msg;
+      els.toast.classList.toggle('error', !!isError);
+      els.toast.classList.add('visible');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => els.toast.classList.remove('visible'), 2400);
+    }
+  </script>
+</body>
+</html>

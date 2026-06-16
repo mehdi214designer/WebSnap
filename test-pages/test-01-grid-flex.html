@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Grid &amp; Flex</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, Inter, sans-serif; background: #f9fafb; color: #111827; }
+
+  /* ---- 1. Simple 3-col CSS Grid ---- */
+  .section { padding: 64px 80px; }
+  .section + .section { border-top: 1px solid #e5e7eb; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; margin-bottom: 24px; }
+  h2 { font-size: 32px; font-weight: 700; margin-bottom: 40px; }
+
+  /* Grid: 3 equal columns */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-icon svg { width: 20px; height: 20px; fill: white; }
+  .card h3 { font-size: 18px; font-weight: 600; }
+  .card p { font-size: 14px; color: #6b7280; line-height: 1.6; }
+
+  /* ---- 2. Asymmetric Grid (2+1) ---- */
+  .grid-asym {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+  }
+  .grid-asym .card-big {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    border-radius: 16px;
+    padding: 48px;
+    color: white;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .grid-asym .card-big h3 { font-size: 28px; font-weight: 700; }
+  .grid-asym .card-big p { font-size: 15px; color: rgba(255,255,255,0.7); line-height: 1.7; }
+  .grid-asym .side { display: grid; grid-template-rows: 1fr 1fr; gap: 24px; }
+
+  /* ---- 3. Nested Flexbox ---- */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; }
+  .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { text-decoration: none; color: #4b5563; font-size: 14px; font-weight: 500; }
+  .nav-cta { display: flex; gap: 10px; }
+  .btn { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-ghost { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+  .btn-primary { background: #6366f1; color: white; }
+
+  /* ---- 4. flex-wrap grid of badges ---- */
+  .badge-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+  .badge {
+    padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    background: #ede9fe; color: #4c1d95;
+  }
+  .badge.green { background: #d1fae5; color: #064e3b; }
+  .badge.amber { background: #fef3c7; color: #78350f; }
+  .badge.red   { background: #fee2e2; color: #7f1d1d; }
+  .badge.blue  { background: #dbeafe; color: #1e3a5f; }
+
+  /* ---- 5. Grid with spanning ---- */
+  .grid-span {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto;
+    gap: 16px;
+  }
+  .span-wide { grid-column: span 2; }
+  .span-tall { grid-row: span 2; }
+
+  /* ---- 6. Align-items variations ---- */
+  .flex-align-row {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    margin-bottom: 16px;
+  }
+  .flex-align-row > div {
+    flex: 1;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Section 1: Simple 3-col grid -->
+<div class="section">
+  <div class="label">Test 1 — CSS Grid 3 equal columns</div>
+  <h2>Three column feature grid</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+      </div>
+      <h3>Fast by default</h3>
+      <p>Every request is optimized automatically. No manual tuning required to hit 100ms response times.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a)">
+        <svg viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-11v6h2v-6h-2zm0-4v2h2V7h-2z"/></svg>
+      </div>
+      <h3>Always secure</h3>
+      <p>End-to-end encryption on all data in transit and at rest. SOC 2 Type II compliant from day one.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <h3>Developer-first</h3>
+      <p>Full API access, CLI tools, webhooks, and a SDKs for every major language. You own the stack.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Asymmetric grid -->
+<div class="section" style="background: #f3f4f6;">
+  <div class="label">Test 2 — Asymmetric grid (2fr + 1fr)</div>
+  <h2>Mixed column widths</h2>
+  <div class="grid-asym">
+    <div class="card-big">
+      <span style="font-size:12px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5)">Main card</span>
+      <h3>Build faster with the tools you already know</h3>
+      <p>No new frameworks, no lock-in. WebSnap works with any stack — React, Vue, Svelte, plain HTML. Drop it in and capture what ships.</p>
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <div class="badge" style="background:rgba(255,255,255,0.12); color:white">React</div>
+        <div class="badge" style="background:rgba(255,255,255,0.12); color:white">Next.js</div>
+        <div class="badge" style="background:rgba(255,255,255,0.12); color:white">Tailwind</div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card" style="background:#f0fdf4; border-color:#bbf7d0;">
+        <h3 style="font-size:15px; color:#15803d">12ms</h3>
+        <p style="font-size:13px; color:#166534">Average capture time on a 3000-node page</p>
+      </div>
+      <div class="card" style="background:#eff6ff; border-color:#bfdbfe;">
+        <h3 style="font-size:15px; color:#1d4ed8">99.8%</h3>
+        <p style="font-size:13px; color:#1e40af">Uptime across all production captures last month</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Nested flex (nav) -->
+<div class="section">
+  <div class="label">Test 3 — Nested flexbox with justify-content: space-between</div>
+  <div class="nav-bar">
+    <div class="nav-logo">
+      <div class="dot"></div>
+      <span>Acme Corp</span>
+    </div>
+    <div class="nav-links">
+      <a href="#">Product</a>
+      <a href="#">Pricing</a>
+      <a href="#">Docs</a>
+      <a href="#">Blog</a>
+      <a href="#">Company</a>
+    </div>
+    <div class="nav-cta">
+      <button class="btn btn-ghost">Log in</button>
+      <button class="btn btn-primary">Get started</button>
+    </div>
+  </div>
+  <p style="font-size:13px; color:#6b7280">↑ Space-between nav — logo left, links center, CTA right.</p>
+</div>
+
+<!-- Section 4: flex-wrap badges -->
+<div class="section" style="background:#fafafa;">
+  <div class="label">Test 4 — flex-wrap with many items</div>
+  <h2 style="margin-bottom:20px; font-size:20px;">Tech stack badges (should wrap)</h2>
+  <div class="badge-wrap">
+    <div class="badge">TypeScript</div>
+    <div class="badge green">Go</div>
+    <div class="badge blue">Python</div>
+    <div class="badge amber">Rust</div>
+    <div class="badge red">Ruby</div>
+    <div class="badge">React</div>
+    <div class="badge green">Vue</div>
+    <div class="badge blue">Svelte</div>
+    <div class="badge amber">Angular</div>
+    <div class="badge">Next.js</div>
+    <div class="badge green">Nuxt</div>
+    <div class="badge blue">Remix</div>
+    <div class="badge amber">Astro</div>
+    <div class="badge red">SvelteKit</div>
+    <div class="badge">Tailwind CSS</div>
+    <div class="badge green">PostgreSQL</div>
+    <div class="badge blue">Redis</div>
+    <div class="badge amber">GraphQL</div>
+  </div>
+</div>
+
+<!-- Section 5: Grid column-span -->
+<div class="section">
+  <div class="label">Test 5 — Grid with column + row spanning</div>
+  <div class="grid-span">
+    <div class="card span-wide" style="background:#faf5ff; border-color:#e9d5ff;">
+      <h3 style="color:#7c3aed">Spans 2 columns</h3>
+      <p style="color:#6d28d9">This card uses grid-column: span 2</p>
+    </div>
+    <div class="card">
+      <h3>1 col</h3>
+      <p>Normal width</p>
+    </div>
+    <div class="card span-tall" style="background:#fef9c3; border-color:#fde68a;">
+      <h3 style="color:#92400e">Spans 2 rows</h3>
+      <p style="color:#78350f">grid-row: span 2</p>
+    </div>
+    <div class="card span-wide">
+      <h3>2 cols again</h3>
+      <p>Another wide card in row 2</p>
+    </div>
+    <div class="card">
+      <h3>1 col</h3>
+      <p>Bottom right</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 6: Flex align-items stretch with unequal content -->
+<div class="section" style="background:#f9fafb;">
+  <div class="label">Test 6 — Flex row with align-items: stretch (unequal heights)</div>
+  <div class="flex-align-row">
+    <div>
+      <h3 style="font-size:16px; margin-bottom:8px;">Short card</h3>
+      <p style="font-size:14px; color:#6b7280">Just two lines here.</p>
+    </div>
+    <div>
+      <h3 style="font-size:16px; margin-bottom:8px;">Medium card</h3>
+      <p style="font-size:14px; color:#6b7280">A little more content so this stretches a bit taller than the others. Tests equal heights.</p>
+    </div>
+    <div>
+      <h3 style="font-size:16px; margin-bottom:8px;">Tall card</h3>
+      <p style="font-size:14px; color:#6b7280">The most content. This one has multiple sentences so it becomes the tallest in the row. The other two cards should match this height. This tests whether the renderer handles stretch correctly without collapsing shorter cards.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

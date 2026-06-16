@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Dark Mode &amp; Glassmorphism</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, Inter, sans-serif;
+    background: #09090b;
+    color: #fafafa;
+    min-height: 100vh;
+  }
+  .section { padding: 64px 80px; }
+  .section + .section { border-top: 1px solid rgba(255,255,255,0.06); }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #71717a; margin-bottom: 24px; }
+
+  /* ---- 1. Gradient hero background ---- */
+  .hero {
+    padding: 120px 80px;
+    position: relative;
+    overflow: hidden;
+    background: #09090b;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 40%, rgba(99,102,241,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 60%, rgba(139,92,246,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 600px; }
+  .hero h1 {
+    font-size: 56px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.03em; margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p { font-size: 18px; color: #a1a1aa; line-height: 1.7; margin-bottom: 32px; }
+  .hero-cta { display: flex; gap: 12px; }
+  .btn-primary-dark {
+    padding: 12px 24px; border-radius: 8px;
+    background: #6366f1; color: white;
+    font-size: 15px; font-weight: 600; border: none; cursor: pointer;
+  }
+  .btn-ghost-dark {
+    padding: 12px 24px; border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e4e4e7; font-size: 15px; font-weight: 500; cursor: pointer;
+  }
+
+  /* ---- 2. Glassmorphism cards ---- */
+  .glass-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .glass-card h3 { font-size: 17px; font-weight: 600; color: #f4f4f5; }
+  .glass-card p { font-size: 14px; color: #a1a1aa; line-height: 1.6; }
+  .glass-card .stat { font-size: 32px; font-weight: 800; color: white; }
+  .glass-card .stat-label { font-size: 13px; color: #71717a; margin-top: -8px; }
+
+  /* ---- 3. Dark cards with colored borders ---- */
+  .dark-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .dark-card {
+    background: #18181b;
+    border-radius: 12px;
+    padding: 28px;
+    border-top: 2px solid;
+  }
+  .dark-card.purple { border-color: #7c3aed; }
+  .dark-card.blue   { border-color: #2563eb; }
+  .dark-card.green  { border-color: #16a34a; }
+  .dark-card.amber  { border-color: #d97706; }
+  .dark-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .dark-card p { font-size: 14px; color: #71717a; line-height: 1.6; }
+
+  /* ---- 4. Gradient text varieties ---- */
+  .grad-text-grid { display: flex; flex-direction: column; gap: 24px; }
+  .grad-text {
+    font-size: 40px; font-weight: 800; line-height: 1.2;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .grad-purple { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+  .grad-gold   { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  .grad-ocean  { background: linear-gradient(90deg, #06b6d4, #6366f1); }
+  .grad-green  { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+
+  /* ---- 5. Layered backdrop ---- */
+  .modal-bg {
+    background: rgba(0,0,0,0.7);
+    border-radius: 16px;
+    padding: 48px;
+    position: relative;
+  }
+  .modal-card {
+    background: rgba(24,24,27,0.9);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .modal-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .modal-card p  { font-size: 14px; color: #a1a1aa; margin-bottom: 20px; }
+  .input-dark {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: white; font-size: 14px;
+    margin-bottom: 10px; outline: none;
+  }
+
+  /* ---- 6. Noise + mesh gradient background ---- */
+  .mesh-section {
+    background:
+      radial-gradient(at 40% 20%, hsla(228,74%,40%,0.5) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(189,100%,40%,0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(355,80%,60%,0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(340,80%,50%,0.2) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(22,100%,60%,0.2) 0px, transparent 50%);
+    background-color: #09090b;
+    padding: 64px 80px;
+  }
+  .mesh-content {
+    background: rgba(9,9,11,0.7);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 48px;
+    display: flex; align-items: center; justify-content: space-between; gap: 40px;
+  }
+  .mesh-text h2 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+  .mesh-text p  { font-size: 15px; color: #a1a1aa; max-width: 400px; line-height: 1.7; }
+  .mesh-stats { display: flex; gap: 32px; }
+  .mesh-stat { text-align: center; }
+  .mesh-stat .num { font-size: 36px; font-weight: 800; color: white; }
+  .mesh-stat .desc { font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<!-- 1. Gradient hero -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="label">Test 1 — Radial gradient background + white gradient text</div>
+    <h1>Design with clarity, ship with confidence</h1>
+    <p>WebSnap captures what your browser sees — pixels, styles, and all — and hands it to Figma as editable layers.</p>
+    <div class="hero-cta">
+      <button class="btn-primary-dark">Start capturing</button>
+      <button class="btn-ghost-dark">View docs →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Glassmorphism -->
+<div class="section">
+  <div class="label">Test 2 — Glassmorphism cards (backdrop-filter: blur)</div>
+  <div class="glass-grid">
+    <div class="glass-card">
+      <div class="stat">47ms</div>
+      <div class="stat-label">Median capture time</div>
+      <p>Measured across 12,000 page captures in the last 30 days.</p>
+    </div>
+    <div class="glass-card">
+      <div class="stat">99.9%</div>
+      <div class="stat-label">Image fetch success rate</div>
+      <p>Extension background worker bypasses CORS on every CDN.</p>
+    </div>
+    <div class="glass-card">
+      <div class="stat">3,800+</div>
+      <div class="stat-label">Layers on a heavy page</div>
+      <p>Large capture warning kicks in at 3000 so you're never surprised.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Dark cards colored top border -->
+<div class="section">
+  <div class="label">Test 3 — Dark cards with per-side border (border-top only)</div>
+  <div class="dark-grid">
+    <div class="dark-card purple">
+      <h3>Components</h3>
+      <p>Figma Auto Layout, colors, gradients, shadows, and radius — all mapped from computed CSS.</p>
+    </div>
+    <div class="dark-card blue">
+      <h3>Images</h3>
+      <p>WebP and AVIF assets auto-converted to PNG before the import so Figma renders every image.</p>
+    </div>
+    <div class="dark-card green">
+      <h3>Typography</h3>
+      <p>Font families, weights, line-height, letter-spacing, inline runs, gradient text — all preserved.</p>
+    </div>
+    <div class="dark-card amber">
+      <h3>Effects</h3>
+      <p>Box shadows, drop shadows, blurs, backdrop-filter, mix-blend-mode. Rare stuff, all covered.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Gradient text varieties -->
+<div class="section">
+  <div class="label">Test 4 — Multiple gradient text directions and color combinations</div>
+  <div class="grad-text-grid">
+    <div class="grad-text grad-purple">Purple to pink, 90deg linear</div>
+    <div class="grad-text grad-gold">Gold to red, fire gradient</div>
+    <div class="grad-text grad-ocean">Cyan to indigo, ocean wave</div>
+    <div class="grad-text grad-green">Green to blue, 135deg diagonal</div>
+  </div>
+</div>
+
+<!-- 5. Modal with layered glass -->
+<div class="section">
+  <div class="label">Test 5 — Layered glassmorphism (modal on dark overlay)</div>
+  <div class="modal-bg">
+    <div class="modal-card">
+      <h3>Create your account</h3>
+      <p>Get started with 14 days free, no card required.</p>
+      <input class="input-dark" type="text" placeholder="Full name" value="" />
+      <input class="input-dark" type="email" placeholder="Work email" value="" />
+      <button class="btn-primary-dark" style="width:100%; padding:12px;">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- 6. Mesh gradient -->
+<div class="mesh-section">
+  <div class="label" style="margin-bottom:32px;">Test 6 — Mesh/multi-radial gradient + backdrop blur container</div>
+  <div class="mesh-content">
+    <div class="mesh-text">
+      <h2>Used by teams that move fast</h2>
+      <p>From solo designers to 200-person orgs. WebSnap fits the workflow you already have — not the other way around.</p>
+    </div>
+    <div class="mesh-stats">
+      <div class="mesh-stat">
+        <div class="num">12k+</div>
+        <div class="desc">Active users</div>
+      </div>
+      <div class="mesh-stat">
+        <div class="num">4.8★</div>
+        <div class="desc">Avg rating</div>
+      </div>
+      <div class="mesh-stat">
+        <div class="num">240ms</div>
+        <div class="desc">P95 import</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

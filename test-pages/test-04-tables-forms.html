@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Tables &amp; Forms</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, Inter, sans-serif; background: #f9fafb; color: #111827; }
+  .section { padding: 64px 80px; background: white; border-bottom: 1px solid #f3f4f6; }
+  .section.gray { background: #f9fafb; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin-bottom: 24px; }
+  h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #111; }
+
+  /* ---- Tables ---- */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #e5e7eb; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { background: #f9fafb; }
+  th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f9fafb; }
+
+  .badge-sm { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+  .badge-sm.active  { background: #d1fae5; color: #065f46; }
+  .badge-sm.trial   { background: #fef3c7; color: #92400e; }
+  .badge-sm.expired { background: #fee2e2; color: #991b1b; }
+
+  .avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; vertical-align: middle; margin-right: 8px; }
+
+  /* ---- Forms ---- */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: span 2; }
+  .field label { font-size: 13px; font-weight: 600; color: #374151; }
+  .field .hint { font-size: 12px; color: #9ca3af; }
+  .input {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111827;
+    background: white;
+    outline: none;
+    width: 100%;
+  }
+  .input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  .input.error { border-color: #ef4444; }
+  .field .error-msg { font-size: 12px; color: #ef4444; }
+  select.input { cursor: pointer; }
+  textarea.input { resize: vertical; min-height: 100px; }
+
+  .radio-group { display: flex; flex-direction: column; gap: 10px; }
+  .radio-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .radio-item input[type="radio"] { accent-color: #6366f1; width: 16px; height: 16px; }
+  .radio-item span { font-size: 14px; color: #374151; }
+
+  .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+  .checkbox-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .checkbox-item input[type="checkbox"] { accent-color: #6366f1; width: 16px; height: 16px; }
+  .checkbox-item span { font-size: 14px; color: #374151; }
+
+  .form-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-primary { background: #6366f1; color: white; }
+  .btn-secondary { background: white; border: 1px solid #d1d5db; color: #374151; }
+
+  /* ---- Pricing table ---- */
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .plan { border: 1px solid #e5e7eb; border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 20px; background: white; }
+  .plan.featured { border-color: #6366f1; border-width: 2px; position: relative; }
+  .plan.featured::before { content: 'Most popular'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #6366f1; color: white; font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 999px; white-space: nowrap; }
+  .plan-name { font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
+  .plan-price { display: flex; align-items: baseline; gap: 4px; }
+  .plan-price .amount { font-size: 40px; font-weight: 800; color: #111; }
+  .plan-price .per { font-size: 14px; color: #9ca3af; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .plan-features li { font-size: 14px; color: #374151; display: flex; align-items: center; gap: 8px; }
+  .plan-features li::before { content: '✓'; color: #10b981; font-weight: 700; }
+  .plan-features li.off { color: #d1d5db; }
+  .plan-features li.off::before { content: '–'; color: #d1d5db; }
+  .plan-btn { padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-align: center; }
+  .plan-btn-primary { background: #6366f1; color: white; }
+  .plan-btn-ghost { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+</style>
+</head>
+<body>
+
+<!-- 1. Data table -->
+<div class="section">
+  <div class="label">Test 1 — Data table with status badges and avatar cells</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Usage</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="avatar" style="background:#6366f1">MH</span>Mhasan Design</td>
+          <td>Pro</td>
+          <td><span class="badge-sm active">Active</span></td>
+          <td>1,240 captures</td>
+          <td>Mar 2025</td>
+        </tr>
+        <tr>
+          <td><span class="avatar" style="background:#10b981">JP</span>Jane Park</td>
+          <td>Team</td>
+          <td><span class="badge-sm active">Active</span></td>
+          <td>8,900 captures</td>
+          <td>Jan 2025</td>
+        </tr>
+        <tr>
+          <td><span class="avatar" style="background:#f59e0b">AK</span>Alex Kim</td>
+          <td>Starter</td>
+          <td><span class="badge-sm trial">Trial</span></td>
+          <td>12 captures</td>
+          <td>May 2026</td>
+        </tr>
+        <tr>
+          <td><span class="avatar" style="background:#ef4444">LR</span>Luis Reyes</td>
+          <td>Free</td>
+          <td><span class="badge-sm expired">Expired</span></td>
+          <td>0 captures</td>
+          <td>Feb 2024</td>
+        </tr>
+        <tr>
+          <td><span class="avatar" style="background:#8b5cf6">SM</span>Sara Müller</td>
+          <td>Enterprise</td>
+          <td><span class="badge-sm active">Active</span></td>
+          <td>42,000 captures</td>
+          <td>Nov 2024</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 2. Form with validation states -->
+<div class="section gray">
+  <div class="label">Test 2 — Full form (text, select, textarea, radio, checkbox)</div>
+  <div style="max-width: 720px;">
+    <h2>Account settings</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label>First name</label>
+        <input class="input" type="text" value="Mhasan" />
+      </div>
+      <div class="field">
+        <label>Last name</label>
+        <input class="input" type="text" value="Alam" />
+      </div>
+      <div class="field">
+        <label>Email address</label>
+        <div class="hint">We'll never share your email.</div>
+        <input class="input" type="email" value="mhasan@example.com" />
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select class="input">
+          <option selected>UI/UX Designer</option>
+          <option>Frontend Developer</option>
+          <option>Product Manager</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="input error" type="password" value="tooshort" />
+        <div class="error-msg">Password must be at least 8 characters</div>
+      </div>
+      <div class="field">
+        <label>Confirm password</label>
+        <input class="input" type="password" placeholder="Repeat password" />
+      </div>
+      <div class="field full">
+        <label>Bio</label>
+        <textarea class="input" placeholder="Tell us a bit about yourself...">10 years in design — started in print, now focused on UI/UX for marketing sites and web apps.</textarea>
+      </div>
+      <div class="field">
+        <label>Plan</label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="plan" checked />
+            <span>Pro — $29/month</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="plan" />
+            <span>Team — $79/month</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="plan" />
+            <span>Enterprise — Custom pricing</span>
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notifications</label>
+        <div class="checkbox-group">
+          <label class="checkbox-item">
+            <input type="checkbox" checked />
+            <span>New capture complete</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" checked />
+            <span>Weekly usage digest</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" />
+            <span>Marketing emails</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" />
+            <span>Product announcements</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:24px;">
+      <button class="btn btn-primary">Save changes</button>
+      <button class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Pricing table (common pattern) -->
+<div class="section">
+  <div class="label">Test 3 — Pricing table (3 columns, featured card with ::before badge)</div>
+  <div class="pricing-grid">
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">
+        <span class="amount">$0</span>
+        <span class="per">/month</span>
+      </div>
+      <ul class="plan-features">
+        <li>50 captures/month</li>
+        <li>Chrome extension</li>
+        <li>Figma plugin</li>
+        <li class="off">HTML upload</li>
+        <li class="off">Priority support</li>
+      </ul>
+      <button class="plan-btn plan-btn-ghost">Get started free</button>
+    </div>
+    <div class="plan featured">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">
+        <span class="amount">$29</span>
+        <span class="per">/month</span>
+      </div>
+      <ul class="plan-features">
+        <li>Unlimited captures</li>
+        <li>Chrome extension</li>
+        <li>Figma plugin</li>
+        <li>HTML upload</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="plan-btn plan-btn-primary">Start free trial</button>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">
+        <span class="amount" style="font-size:28px; line-height:1.4;">Custom</span>
+      </div>
+      <ul class="plan-features">
+        <li>Unlimited captures</li>
+        <li>SSO + audit log</li>
+        <li>Dedicated support</li>
+        <li>Custom integrations</li>
+        <li>SLA guarantee</li>
+      </ul>
+      <button class="plan-btn plan-btn-ghost">Contact sales</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

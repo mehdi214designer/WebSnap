@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>WebSnap Test · Typography Edge Cases</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, Inter, sans-serif; background: white; color: #111827; line-height: 1.5; }
+  .section { padding: 64px 80px; border-bottom: 1px solid #f3f4f6; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin-bottom: 24px; }
+
+  /* 1. Mixed inline runs */
+  .prose { font-size: 18px; line-height: 1.8; color: #374151; max-width: 680px; }
+  .prose strong { font-weight: 700; color: #111827; }
+  .prose em { font-style: italic; color: #6366f1; }
+  .prose code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 15px; background: #f3f4f6; border-radius: 4px; padding: 1px 6px;
+    color: #6366f1;
+  }
+  .prose a { color: #2563eb; text-decoration: underline; }
+  .prose mark { background: #fef9c3; color: #92400e; padding: 0 4px; border-radius: 3px; }
+
+  /* 2. Text transforms */
+  .transform-row { display: flex; flex-direction: column; gap: 16px; }
+  .t-upper { text-transform: uppercase; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; color: #6b7280; }
+  .t-lower { text-transform: lowercase; font-size: 20px; color: #111; }
+  .t-cap   { text-transform: capitalize; font-size: 20px; color: #111; }
+
+  /* 3. Letter spacing extremes */
+  .ls-grid { display: flex; flex-direction: column; gap: 20px; }
+  .ls-tight  { letter-spacing: -0.05em; font-size: 40px; font-weight: 800; color: #111; }
+  .ls-normal { letter-spacing:  0;      font-size: 40px; font-weight: 800; color: #6366f1; }
+  .ls-wide   { letter-spacing:  0.2em;  font-size: 20px; font-weight: 600; color: #6b7280; text-transform: uppercase; }
+  .ls-xwide  { letter-spacing:  0.5em;  font-size: 14px; font-weight: 500; color: #d1d5db; text-transform: uppercase; }
+
+  /* 4. Line height variations */
+  .lh-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .lh-box  { padding: 24px; border: 1px solid #e5e7eb; border-radius: 10px; }
+  .lh-tight  { line-height: 1.2; font-size: 18px; }
+  .lh-normal { line-height: 1.6; font-size: 18px; }
+  .lh-loose  { line-height: 2.2; font-size: 18px; }
+
+  /* 5. Very long single line */
+  .long-line { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #374151; }
+
+  /* 6. Multiline heading that should NOT be treated as single-line */
+  .multiline-head {
+    font-size: 48px; font-weight: 800; line-height: 1.2;
+    letter-spacing: -0.03em;
+    max-width: 700px;
+    color: #111;
+  }
+
+  /* 7. Text on colored background (text wrapping in a box) */
+  .text-pill {
+    display: inline-block;
+    padding: 8px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    background: #ede9fe; color: #7c3aed;
+    margin-right: 8px; margin-bottom: 8px;
+  }
+  .text-pill.on-dark {
+    background: #1e1b4b; color: #a5b4fc;
+  }
+
+  /* 8. Strikethrough + underline mix */
+  .text-deco { font-size: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .td-underline { text-decoration: underline; }
+  .td-strike { text-decoration: line-through; color: #9ca3af; }
+  .td-both { text-decoration: underline line-through; color: #ef4444; }
+
+  /* 9. Text align variations */
+  .text-align-demo { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+  .ta-row { padding: 16px 24px; border-bottom: 1px solid #f3f4f6; font-size: 16px; color: #374151; }
+  .ta-row:last-child { border-bottom: none; }
+
+  /* 10. Monospace code block */
+  .code-block {
+    background: #1e293b; color: #e2e8f0;
+    padding: 24px; border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 14px; line-height: 1.7;
+    overflow-x: auto;
+  }
+  .code-block .kw  { color: #7dd3fc; }
+  .code-block .fn  { color: #a78bfa; }
+  .code-block .str { color: #34d399; }
+  .code-block .cmt { color: #64748b; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- 1. Mixed inline runs -->
+<div class="section">
+  <div class="label">Test 1 — Mixed inline formatting (bold, italic, code, link, mark)</div>
+  <p class="prose">
+    WebSnap uses <strong>computed styles</strong> rather than raw CSS, which means
+    even <em>Framer's motion-animated</em> elements come through correctly. The
+    <code>buildNode()</code> function walks the real DOM — after animations finish — so
+    what you see in the browser is <mark>exactly what lands in Figma</mark>.
+    Check out the <a href="#">full documentation</a> for details on how the pipeline works.
+  </p>
+</div>
+
+<!-- 2. Text transforms -->
+<div class="section" style="background:#fafafa;">
+  <div class="label">Test 2 — Text transform (uppercase, lowercase, capitalize)</div>
+  <div class="transform-row">
+    <div class="t-upper">THIS IS AN UPPERCASE LABEL — should stay upper in Figma</div>
+    <div class="t-lower">THIS WAS TYPED IN CAPS but text-transform: lowercase makes it small</div>
+    <div class="t-cap">every word starts with a capital letter because of capitalize</div>
+  </div>
+</div>
+
+<!-- 3. Letter spacing -->
+<div class="section">
+  <div class="label">Test 3 — Letter spacing extremes (tight, normal, wide, x-wide)</div>
+  <div class="ls-grid">
+    <div class="ls-tight">Tight −0.05em spacing</div>
+    <div class="ls-normal">Normal 0 spacing baseline</div>
+    <div class="ls-wide">Wide tracking +0.2em</div>
+    <div class="ls-xwide">X-wide +0.5em tracking</div>
+  </div>
+</div>
+
+<!-- 4. Line heights -->
+<div class="section" style="background:#fafafa;">
+  <div class="label">Test 4 — Line height variations (tight 1.2, normal 1.6, loose 2.2)</div>
+  <div class="lh-grid">
+    <div class="lh-box">
+      <p class="lh-tight">Tight line height 1.2. Multiple lines of text to see the difference clearly. This paragraph has tight leading which is common in large headlines and bold display text.</p>
+    </div>
+    <div class="lh-box">
+      <p class="lh-normal">Normal line height 1.6. Multiple lines of text to see the difference clearly. Body copy typically uses this range for readability across longer passages of text.</p>
+    </div>
+    <div class="lh-box">
+      <p class="lh-loose">Loose line height 2.2. Multiple lines of text to see the difference clearly. Loose leading is sometimes used in editorial or poetry contexts for emphasis and space.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5. Very long single line with overflow ellipsis -->
+<div class="section">
+  <div class="label">Test 5 — Single-line overflow with text-overflow: ellipsis</div>
+  <div style="max-width: 600px; background:#f9fafb; padding:16px 20px; border-radius:8px; border:1px solid #e5e7eb;">
+    <div class="long-line">This is a very long line of text that should NOT wrap — it has white-space: nowrap and text-overflow: ellipsis so it clips with a "..." at the end of the container width.</div>
+  </div>
+</div>
+
+<!-- 6. True multiline heading -->
+<div class="section" style="background:#fafafa;">
+  <div class="label">Test 6 — Multi-line large heading (must NOT use WIDTH_AND_HEIGHT auto-resize)</div>
+  <h2 class="multiline-head">
+    This heading wraps to three lines intentionally and should render all three lines in Figma
+  </h2>
+</div>
+
+<!-- 7. Text pills -->
+<div class="section">
+  <div class="label">Test 7 — Short text in colored pill shapes</div>
+  <div style="margin-bottom:16px;">
+    <span class="text-pill">Components</span>
+    <span class="text-pill">Auto Layout</span>
+    <span class="text-pill">Typography</span>
+    <span class="text-pill">Gradients</span>
+    <span class="text-pill">Shadows</span>
+  </div>
+  <div>
+    <span class="text-pill on-dark">Dark pill</span>
+    <span class="text-pill on-dark">Another one</span>
+    <span class="text-pill on-dark">And one more</span>
+  </div>
+</div>
+
+<!-- 8. Text decoration -->
+<div class="section" style="background:#fafafa;">
+  <div class="label">Test 8 — Text decoration (underline, strikethrough, both)</div>
+  <div class="text-deco">
+    <div class="td-underline">Underlined text — should render with underline decoration in Figma</div>
+    <div class="td-strike">Struck-through text — old price, deleted item, deprecated API</div>
+    <div class="td-both">Both underline AND strikethrough — edge case worth testing</div>
+  </div>
+</div>
+
+<!-- 9. Text align -->
+<div class="section">
+  <div class="label">Test 9 — Text alignment (left, center, right, justify)</div>
+  <div class="text-align-demo">
+    <div class="ta-row" style="text-align:left;">Left-aligned text. This is the default reading direction for most western languages. Long content stays flush to the left margin.</div>
+    <div class="ta-row" style="text-align:center;">Centered text. Commonly used in hero headings, card titles, and call-to-action labels. Looks good short, tricky when long.</div>
+    <div class="ta-row" style="text-align:right;">Right-aligned text. Used in RTL contexts, numeric columns in tables, and sometimes for pull-quotes in editorial layouts.</div>
+    <div class="ta-row" style="text-align:justify;">Justified text fills the full width of the container. Both edges align to the box. This can create uneven word spacing in narrower columns, but looks tidy in magazine layouts and wide containers like this one.</div>
+  </div>
+</div>
+
+<!-- 10. Monospace code block with colored spans -->
+<div class="section" style="background:#f9fafb;">
+  <div class="label">Test 10 — Monospace font with per-span color (simulates syntax highlighting)</div>
+  <div class="code-block">
+    <span class="cmt">// WebSnap capture pipeline</span><br/>
+    <span class="kw">async function</span> <span class="fn">runCapture</span>(options) {<br/>
+    &nbsp;&nbsp;<span class="kw">const</span> tree = <span class="kw">await</span> <span class="fn">buildNode</span>(document.body);<br/>
+    &nbsp;&nbsp;<span class="kw">const</span> assets = <span class="str">'...'</span>;<br/>
+    &nbsp;&nbsp;<span class="kw">return</span> { tree, assets, version: <span class="str">'0.1'</span> };<br/>
+    }
+  </div>
+</div>
+
+</body>
+</html>

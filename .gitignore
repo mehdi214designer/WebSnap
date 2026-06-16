@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Editor cruft
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Build output (none today — placeholder)
+dist/
+build/
+
+# Local dev captures
+*.wsnap
