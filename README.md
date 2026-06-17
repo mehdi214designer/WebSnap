@@ -108,6 +108,14 @@ WebSnap files use the `.wsnap` extension. It's plain JSON with base64-inlined as
 - Image fetching tries CORS fetch first, falls back to canvas-paint, downscales anything over 4 MB.
 - Tests live in the project's parent `outputs/` folder during dev (parser unit tests and a JSDOM e2e test). They pass 46/46 plus end-to-end at last build.
 
+## Contributing
+
+PRs welcome. See `CONTRIBUTING.md` for dev setup, testing, and what's in / out of scope.
+
+## License
+
+MIT. See `LICENSE`.
+
 ## Credits
 
-Built by Mhasan with Claude. For the WPMN design team. MIT for internal use.
+Built by Mhasan with Claude. Started as an internal tool for the WPManageNinja design team, open to anyone who wants a free, local-first alternative to html.to.design.
