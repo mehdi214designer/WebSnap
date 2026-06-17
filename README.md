@@ -118,4 +118,4 @@ MIT. See `LICENSE`.
 
 ## Credits
 
-Built by Mhasan with Claude. Started as an internal tool for the WPManageNinja design team, open to anyone who wants a free, local-first alternative to html.to.design.
+Built by Md Mahdi Hasan with Claude. Started as an internal tool for the WPManageNinja design team, open to anyone who wants a free, local-first alternative to html.to.design.
