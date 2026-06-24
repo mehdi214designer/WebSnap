@@ -304,10 +304,30 @@ async function renderChildren(parentTreeNode, parentFigmaNode, parentOrigin, ctx
     const inFlow = built.filter(x => !isAbs(x));
     const absChildren = built.filter(isAbs);
 
-    // Sort in-flow children along the primary axis to preserve visual order
-    const dir = parentTreeNode.styles.flexDirection || 'row';
-    const horiz = !dir.startsWith('column');
-    const reverse = dir.endsWith('reverse');
+    // Sort in-flow children along the primary axis to preserve visual order. Determine
+    // the axis from the parent's actual layout mode — NOT just from flexDirection, which
+    // defaults to 'row' even on block containers where it's meaningless. The old code
+    // sorted block stacks by X, which silently flipped a vertical column of children
+    // whenever ANY child had a different X from its siblings (e.g. a centered title
+    // landing at a higher X than left-aligned content below it ended up sorted LAST,
+    // appearing at the bottom of the section in Figma).
+    const parentStyles = parentTreeNode.styles || {};
+    const parentDisp = parentStyles.display || '';
+    const parentIsFlex = parentDisp === 'flex' || parentDisp === 'inline-flex';
+    const parentIsGrid = parentDisp === 'grid' || parentDisp === 'inline-grid';
+    let horiz;
+    let reverse = false;
+    if (parentIsFlex) {
+      const dir = parentStyles.flexDirection || 'row';
+      horiz = !dir.startsWith('column');
+      reverse = dir.endsWith('reverse');
+    } else if (parentIsGrid) {
+      const gd = gridDirectionAndWrap(parentTreeNode, (parentTreeNode.children || []).length);
+      horiz = gd.mode !== 'VERTICAL';
+    } else {
+      // Block / list-item / flow-root: always vertical stacking
+      horiz = false;
+    }
     const sortKey = horiz ? 'x' : 'y';
     const sortedFlow = [...inFlow].sort((a, b) => a.tn.rect[sortKey] - b.tn.rect[sortKey]);
     if (reverse) sortedFlow.reverse();

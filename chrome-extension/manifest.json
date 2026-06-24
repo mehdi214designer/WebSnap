@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WebSnap",
-  "version": "0.4.13",
+  "version": "0.4.14",
   "description": "Capture any webpage as editable Figma layers. A free alternative to html.to.design.",
   "permissions": [
     "activeTab",

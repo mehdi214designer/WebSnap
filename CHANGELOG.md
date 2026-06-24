@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.4.14 — 2026-06-24
+
+### Fix: section titles no longer get demoted to the bottom of the section
+
+Diagnosed against the FluentMembers landing page render where "Simple Pricing That Respects Your Business", "Everything You Need to Run a Membership Site", and "Common Questions Before You Join" all appeared **below** their siblings instead of at the top of their sections.
+
+- **Root cause:** Phase 3 of `renderChildren` chose its sort axis from `parentTreeNode.styles.flexDirection || 'row'`. CSS resolves `flexDirection` to `'row'` even on **block** elements where it has no meaning, so every block container ended up sorting children by X. The moment any child had a different X from its siblings — typically a centered title block landing at a higher X than the left-aligned content beneath it — the title got sorted **last**, putting it at the bottom of the vertical Auto Layout column.
+- **Fix:** Phase 3 now picks the sort axis from the parent's actual layout mode. Flex containers still use `flexDirection`. Grid containers use `gridDirectionAndWrap`. Block / list-item / flow-root containers always sort by Y. The `'row'` default no longer leaks into vertical stacks.
+- **Side effect:** this also fixes the long-standing Nexode 130W / Genshin Impact Edition swap on the bento test page from earlier sessions — same root cause, different surface.
+
+### Verified
+
+- `code.js` passes `node --check`.
+- Simulated the new sort against the FluentMembers `.wsnap` for the pricing `.wrap`: `.pricing-hd` now lands at y=9106 (top), `.tog-wrap` y=9318, `.pg` y=9388, `.pricing-note` y=9836. Correct DOM order, correct visual order.
+
+---
+
 ## v0.4.13 — 2026-06-24
 
 Big fidelity pass driven by a real FluentMembers landing page capture (1,273 nodes, 13,448px tall). Eleven shipped fixes across capture and render.
