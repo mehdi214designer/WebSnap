@@ -1,0 +1,28 @@
+# GitHub Sponsorship config — adds a "Sponsor" button to the repo's About panel
+# and the top of the repo page. Uncomment the lines for the platforms you use,
+# fill in your username/slug, and delete the rest.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+# GitHub Sponsors (recommended — apply at https://github.com/sponsors). Once you're
+# approved, GitHub matches your first $5,000 of donations for the first 12 months.
+# github: mehdi214designer
+
+# Ko-fi — one-time tips, no approval needed. Sign up at https://ko-fi.com.
+# ko_fi: your-ko-fi-slug
+
+# Buy Me a Coffee — one-time tips. Sign up at https://buymeacoffee.com.
+# buy_me_a_coffee: your-bmc-slug
+
+# Patreon — recurring patrons. https://patreon.com.
+# patreon: your-patreon-slug
+
+# Open Collective — transparent project finances. https://opencollective.com.
+# open_collective: your-collective-slug
+
+# Liberapay — recurring, EU-friendly, low fees. https://liberapay.com.
+# liberapay: your-liberapay-slug
+
+# Custom URLs — anything else (PayPal.me, your own website, Stripe link, etc.).
+# Up to 4 URLs in a list.
+# custom: ["https://paypal.me/your-handle"]

@@ -459,9 +459,9 @@
         <div class="opt-row">
           <div>
             <div class="opt-label">Use Auto Layout</div>
-            <div class="opt-hint">Off = pixel-perfect positions (recommended). On = editable flex layout, but spacing may drift.</div>
+            <div class="opt-hint">On = editable flex layout that matches the source structure (recommended). Off = pixel-perfect frames with fixed positions — exact but not resizable.</div>
           </div>
-          <div class="switch" data-opt="autoLayout"></div>
+          <div class="switch on" data-opt="autoLayout"></div>
         </div>
         <div class="opt-row">
           <div>
@@ -500,7 +500,7 @@
     // ---------- UI state ----------
     const state = {
       data: null,
-      options: { autoLayout: false, images: true, effects: true, cleanLayers: true }
+      options: { autoLayout: true, images: true, effects: true, cleanLayers: true }
     };
 
     const els = {

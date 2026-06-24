@@ -479,21 +479,52 @@ async function renderNode(tn, parentOrigin, ctx) {
       node.resize(w, h);
       applyVisualStyles(node, tn, ctx);
     } else if (hasBg) {
-      // Wrap text in a styled frame
+      // Text-with-background leaves (buttons, inputs, badges, pills) — wrap in an Auto
+      // Layout frame so the text uses real CSS padding and centers correctly, instead of
+      // sitting at fixed (x,y) coords. Without this, every button comes out as a plain
+      // Frame with text floating inside, and resizing the button doesn't reflow the text.
       const frame = figma.createFrame();
       frame.resize(w, h);
       applyVisualStyles(frame, tn, ctx);
-      // Padding inferred from CSS so text aligns reasonably
-      try {
-        const pl = parseFloat(tn.styles.paddingLeft) || 0;
-        const pt = parseFloat(tn.styles.paddingTop) || 0;
-        frame.appendChild(txt);
-        txt.x = pl;
-        txt.y = pt;
-      } catch (_e) {
-        frame.appendChild(txt);
-        txt.x = 0;
-        txt.y = 0;
+      frame.appendChild(txt);
+      if (ctx.options.autoLayout) {
+        try {
+          const pl = parseFloat(tn.styles.paddingLeft) || 0;
+          const pr = parseFloat(tn.styles.paddingRight) || 0;
+          const pt = parseFloat(tn.styles.paddingTop) || 0;
+          const pb = parseFloat(tn.styles.paddingBottom) || 0;
+          frame.layoutMode = 'HORIZONTAL';
+          frame.primaryAxisSizingMode = 'FIXED';
+          frame.counterAxisSizingMode = 'FIXED';
+          frame.primaryAxisAlignItems = 'CENTER';
+          frame.counterAxisAlignItems = 'CENTER';
+          frame.paddingLeft = pl;
+          frame.paddingRight = pr;
+          frame.paddingTop = pt;
+          frame.paddingBottom = pb;
+          // Honor the text node's own alignment (e.g. text-align:left button) by setting
+          // the primary-axis alignment to match.
+          const ta = (tn.text && tn.text.style && tn.text.style.textAlign) || '';
+          if (ta === 'left' || ta === 'start') frame.primaryAxisAlignItems = 'MIN';
+          else if (ta === 'right' || ta === 'end') frame.primaryAxisAlignItems = 'MAX';
+        } catch (_e) {
+          // AL setup failed (e.g. fonts not loaded for layoutMode side-effects). Fall back
+          // to absolute positioning so the text still lands inside the frame.
+          try {
+            const pl = parseFloat(tn.styles.paddingLeft) || 0;
+            const pt = parseFloat(tn.styles.paddingTop) || 0;
+            txt.x = pl;
+            txt.y = pt;
+          } catch (_e2) { txt.x = 0; txt.y = 0; }
+        }
+      } else {
+        // Pixel-perfect mode — keep the old absolute positioning of text inside the frame
+        try {
+          const pl = parseFloat(tn.styles.paddingLeft) || 0;
+          const pt = parseFloat(tn.styles.paddingTop) || 0;
+          txt.x = pl;
+          txt.y = pt;
+        } catch (_e) { txt.x = 0; txt.y = 0; }
       }
       node = frame;
     } else {
@@ -548,18 +579,42 @@ async function renderNode(tn, parentOrigin, ctx) {
   return node;
 }
 
+// Sentinel color we substitute for `currentColor` before handing the SVG to Figma's
+// importer. After import we find vectors painted with this exact color and swap them
+// for the real CSS color — this preserves any hard-coded fills in multi-color SVGs.
+// The value is intentionally an obscure off-yellow no real designer picks.
+const CURRENT_COLOR_SENTINEL = '#fefe01';
+const SENTINEL_RGB = { r: 254/255, g: 254/255, b: 1/255 };
+
+function isSentinelColor(c) {
+  if (!c) return false;
+  return Math.abs(c.r - SENTINEL_RGB.r) < 0.01
+      && Math.abs(c.g - SENTINEL_RGB.g) < 0.01
+      && Math.abs(c.b - SENTINEL_RGB.b) < 0.01;
+}
+
 async function createSvgNode(tn, w, h, ctx) {
+  // Pre-process source: substitute currentColor with a sentinel so we can find and replace
+  // ONLY those paths after Figma imports the vectors. The previous blanket-recolor mode
+  // overwrote every fill in the SVG when any single path used currentColor — that broke
+  // multi-color icons where currentColor was just one of several intentional fills.
+  const rawSource = tn.svg.source || '';
+  const sourceUsesCurrentColor = /currentcolor/i.test(rawSource);
+  const processedSource = sourceUsesCurrentColor
+    ? rawSource.replace(/currentColor/gi, CURRENT_COLOR_SENTINEL)
+    : rawSource;
+
   let svgNode = null;
   // The async variant throws on property access in some Figma runtimes, so guard each check.
   try {
     if (figma['createNodeFromSvgAsync'] && typeof figma['createNodeFromSvgAsync'] === 'function') {
-      svgNode = await figma.createNodeFromSvgAsync(tn.svg.source);
+      svgNode = await figma.createNodeFromSvgAsync(processedSource);
     }
   } catch (_e) {}
   if (!svgNode) {
     try {
       if (figma['createNodeFromSvg'] && typeof figma['createNodeFromSvg'] === 'function') {
-        svgNode = figma.createNodeFromSvg(tn.svg.source);
+        svgNode = figma.createNodeFromSvg(processedSource);
       }
     } catch (_e) {}
   }
@@ -567,26 +622,26 @@ async function createSvgNode(tn, w, h, ctx) {
 
   try {
     try { svgNode.resize(w, h); } catch (_e) {}
-    // Override fill only if the SVG source uses `currentColor` and CSS color is set.
-    // Multi-color SVGs (logos, illustrations) keep their original fills.
-    const sourceUsesCurrentColor = /currentcolor/i.test(tn.svg.source || '');
     const col = parseColor(tn.styles && tn.styles.color);
     if (sourceUsesCurrentColor && col && col.a > 0 && 'findAll' in svgNode) {
       try {
         const vectors = svgNode.findAll(function (n) { return n.type === 'VECTOR' || n.type === 'BOOLEAN_OPERATION'; });
         vectors.forEach(function (v) {
           if ('fills' in v && Array.isArray(v.fills)) {
-            const hasFill = v.fills.some(function (f) { return f && f.type === 'SOLID'; });
-            if (hasFill) {
-              v.fills = [{ type: 'SOLID', color: { r: col.r, g: col.g, b: col.b }, opacity: col.a }];
-            }
+            v.fills = v.fills.map(function (f) {
+              if (f && f.type === 'SOLID' && isSentinelColor(f.color)) {
+                return { type: 'SOLID', color: { r: col.r, g: col.g, b: col.b }, opacity: col.a };
+              }
+              return f;
+            });
           }
-          // Also recolor strokes that were currentColor
-          if ('strokes' in v && Array.isArray(v.strokes) && v.strokes.length) {
-            const hasStroke = v.strokes.some(function (s) { return s && s.type === 'SOLID'; });
-            if (hasStroke) {
-              v.strokes = [{ type: 'SOLID', color: { r: col.r, g: col.g, b: col.b }, opacity: col.a }];
-            }
+          if ('strokes' in v && Array.isArray(v.strokes)) {
+            v.strokes = v.strokes.map(function (s) {
+              if (s && s.type === 'SOLID' && isSentinelColor(s.color)) {
+                return { type: 'SOLID', color: { r: col.r, g: col.g, b: col.b }, opacity: col.a };
+              }
+              return s;
+            });
           }
         });
       } catch (_e) {}
@@ -1146,12 +1201,26 @@ function applyVisualStyles(node, tn, ctx) {
           }
         }
         if (hash) {
-          const scaleMode = mapBgScale(tn.styles.backgroundSize);
-          fills.push({
+          // Tile assets (baked from repeating-gradient / small-tile backgrounds in the
+          // capture) must use TILE scale mode at their natural pixel size — otherwise
+          // a 26x26 grid line stretches to fill the whole card and the pattern is lost.
+          const asset = tn.styles.backgroundAsset;
+          let scaleMode = mapBgScale(tn.styles.backgroundSize);
+          let imageTransform = undefined;
+          if (asset.tile) {
+            scaleMode = 'TILE';
+          }
+          const fill = {
             type: 'IMAGE',
-            scaleMode,
+            scaleMode: scaleMode,
             imageHash: hash
-          });
+          };
+          if (asset.tile && asset.width) {
+            // scalingFactor of 1 means "render at 1px-per-image-pixel" — combined with
+            // TILE this gives an actual repeating tile at the captured pixel size.
+            fill.scalingFactor = 1;
+          }
+          fills.push(fill);
         }
       } catch (e) {}
     }
@@ -1207,6 +1276,8 @@ function mapBgScale(size) {
   if (!size) return 'FILL';
   if (size.includes('contain')) return 'FIT';
   if (size.includes('cover')) return 'FILL';
+  // Explicit pixel size on a non-tile asset — Figma's TILE scale mode crops at the image's
+  // natural size, so fall back to FILL when we don't have an explicit tile flag.
   return 'FILL';
 }
 function applyCornerRadius(node, tn) {
@@ -1419,6 +1490,15 @@ function isFlattenableWrapper(tn) {
   const pos = (tn.styles && tn.styles.position) || '';
   if (pos === 'fixed' || pos === 'sticky') return false;
   if (nodeHasVisualStyle(tn)) return false;       // has paint worth keeping
+  // Keep wrappers whose only "style" is padding — flattening them would silently lose
+  // the spacing they introduce around children (a common pattern: <section class="wrap"
+  // style="padding:32px"><Card/></section>). nodeHasVisualStyle ignores padding because
+  // padding has no visual paint, but it's structurally meaningful for AL.
+  const s = tn.styles || {};
+  const padSides = ['paddingTop','paddingRight','paddingBottom','paddingLeft'];
+  for (let i = 0; i < padSides.length; i++) {
+    if ((parseFloat(s[padSides[i]]) || 0) >= 4) return false;
+  }
   return true;
 }
 
@@ -1554,11 +1634,13 @@ function computeFlexGeometry(tn) {
 }
 
 // How far a child may land from its captured position before we refuse auto layout.
-// Flex gets a generous budget (CSS flex -> Auto Layout is the whole point; uneven gaps
-// drift a little but stay resizable). Clipped scrollers/marquees (child positioned
-// outside its container) blow past this and fall back to pixel-perfect absolute.
+// Block matches flex now — real block stacks routinely have small margin variance between
+// siblings (margin-top: 40px on one, 20px on another), which used to push drift past the
+// old 6px gate and force the whole stack into pixel-perfect Frames with no AL inheritance.
+// Clipped scrollers / marquees / wide grid carousels still blow past this and fall back
+// to absolute via the flex path.
 const FLEX_DRIFT_TOL = 16;
-const BLOCK_DRIFT_TOL = 6;
+const BLOCK_DRIFT_TOL = 16;
 
 function shouldUseAutoLayout(tn) {
   const d = tn.styles && tn.styles.display || '';
@@ -1569,13 +1651,52 @@ function shouldUseAutoLayout(tn) {
   if (!g) return false;
   if (g.wrap) return isFlex; // wrapped flex/grid -> CSS path; block never wraps
   if (isFlex) return (g.drift == null) || g.drift <= FLEX_DRIFT_TOL;
-  // Block: only stacks of 2+ in-flow children, and only when reproduced tightly.
+  // Block containers: AL covers vertical stacks, but ALSO single-in-flow-child wrappers
+  // that carry meaningful CSS padding. The common case is `<section style="padding:72px">`
+  // with one `.wrap` child plus absolute decorative pseudos — under the old rule it failed
+  // "< 2 in-flow children" and became a plain Frame, dropping all 72px of section padding.
   const inflow = (tn.children || []).filter(function (c) {
     const p = c && c.styles && c.styles.position;
     return c && c.rect && p !== 'absolute' && p !== 'fixed';
   });
-  if (inflow.length < 2) return false;
+  if (inflow.length === 0) return false;
+  if (inflow.length === 1) return hasMeaningfulCssPadding(tn);
   return (g.drift != null) && g.drift <= BLOCK_DRIFT_TOL;
+}
+
+// True when any CSS padding side is >= 4px — the threshold below which wrapping in AL
+// adds no visible value over a plain Frame.
+function hasMeaningfulCssPadding(tn) {
+  const s = tn.styles || {};
+  const sides = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'];
+  for (let i = 0; i < sides.length; i++) {
+    if ((parseFloat(s[sides[i]]) || 0) >= 4) return true;
+  }
+  return false;
+}
+
+// Return the rounded CSS padding value when it's within tolerance of the geometric
+// value (clean numbers); fall back to geometry when CSS and reality disagree.
+const PADDING_PREFER_TOL = 4;
+function preferCssPadding(tn, geomValue, cssKey) {
+  const s = tn.styles || {};
+  const cssVal = parseFloat(s[cssKey]);
+  if (isNaN(cssVal)) return geomValue;
+  if (Math.abs(cssVal - geomValue) <= PADDING_PREFER_TOL) return Math.round(cssVal);
+  return geomValue;
+}
+
+// Same idea for itemSpacing — read CSS gap / row-gap / column-gap, prefer when close.
+const GAP_PREFER_TOL = 4;
+function preferCssSpacing(tn, geomValue, cssKey) {
+  const s = tn.styles || {};
+  // Single `gap: 24px` shorthand falls back to either rowGap or columnGap depending on
+  // axis — getComputedStyle resolves it into both rowGap and columnGap already.
+  let cssVal = parseFloat(s[cssKey]);
+  if (isNaN(cssVal)) cssVal = parseFloat(s.gap);
+  if (isNaN(cssVal)) return geomValue;
+  if (Math.abs(cssVal - geomValue) <= GAP_PREFER_TOL) return Math.round(cssVal);
+  return geomValue;
 }
 
 function gridDirectionAndWrap(tn, childCount) {
@@ -1633,19 +1754,23 @@ function applyAutoLayout(frame, tn, ctx, inFlowChildren) {
       // ---- Geometry-derived layout (preferred) ----
       // Reproduce the real child positions with explicit padding + itemSpacing instead
       // of trusting CSS gap, which misses margin-based spacing and collapses the column.
+      // BUT: when CSS padding is within a few pixels of the geometric value, prefer the
+      // CSS value so Figma frames show clean 72px / 24px / etc. instead of 71.34px from
+      // sub-pixel layout math. Geometry still wins when CSS and reality disagree (e.g.
+      // justify-content: center with no padding gives a large geometric padding).
       frame.primaryAxisAlignItems = 'MIN';
       frame.counterAxisAlignItems = geo.counterAlign;
-      try { frame.itemSpacing = geo.itemSpacing; } catch (_e) {}
+      try { frame.itemSpacing = preferCssSpacing(tn, geo.itemSpacing, geo.horiz ? 'columnGap' : 'rowGap'); } catch (_e) {}
       if (geo.horiz) {
-        frame.paddingLeft = geo.padS;
-        frame.paddingRight = geo.padE;
-        frame.paddingTop = geo.counterAlign === 'MIN' ? geo.padCS : 0;
-        frame.paddingBottom = geo.counterAlign === 'MAX' ? geo.padCE : 0;
+        frame.paddingLeft = preferCssPadding(tn, geo.padS, 'paddingLeft');
+        frame.paddingRight = preferCssPadding(tn, geo.padE, 'paddingRight');
+        frame.paddingTop = geo.counterAlign === 'MIN' ? preferCssPadding(tn, geo.padCS, 'paddingTop') : 0;
+        frame.paddingBottom = geo.counterAlign === 'MAX' ? preferCssPadding(tn, geo.padCE, 'paddingBottom') : 0;
       } else {
-        frame.paddingTop = geo.padS;
-        frame.paddingBottom = geo.padE;
-        frame.paddingLeft = geo.counterAlign === 'MIN' ? geo.padCS : 0;
-        frame.paddingRight = geo.counterAlign === 'MAX' ? geo.padCE : 0;
+        frame.paddingTop = preferCssPadding(tn, geo.padS, 'paddingTop');
+        frame.paddingBottom = preferCssPadding(tn, geo.padE, 'paddingBottom');
+        frame.paddingLeft = geo.counterAlign === 'MIN' ? preferCssPadding(tn, geo.padCS, 'paddingLeft') : 0;
+        frame.paddingRight = geo.counterAlign === 'MAX' ? preferCssPadding(tn, geo.padCE, 'paddingRight') : 0;
       }
     } else {
       // ---- CSS-derived fallback (wrapped / grid-wrap layouts) ----

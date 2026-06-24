@@ -1,5 +1,64 @@
 # Changelog
 
+## v0.4.13 — 2026-06-24
+
+Big fidelity pass driven by a real FluentMembers landing page capture (1,273 nodes, 13,448px tall). Eleven shipped fixes across capture and render.
+
+### Auto Layout
+
+- **Auto Layout is now ON by default.** The "Use Auto Layout" toggle in the plugin UI defaulted to OFF, with a hint saying pixel-perfect was "recommended". Every section, card, and container was therefore arriving in Figma as a plain Frame. Flipped to ON, hint rewritten to recommend AL.
+- **AL coverage widened in the gate logic.** `BLOCK_DRIFT_TOL` loosened from 6 → 16 (matches flex). Block containers with normal margin variance between siblings now pass instead of being rejected over a 6px difference.
+- **Single-in-flow-child wrappers with CSS padding now AL too.** The common case `<section style="padding:72px"><div class="wrap">...</div></section>` was failing the `<2 in-flow children` gate (the absolute decorative pseudos didn't count), so the section became a plain Frame and the 72px padding was completely lost. New `hasMeaningfulCssPadding()` lets these through.
+- **Verified on the FluentMembers capture: 534 → 569 AL containers (+35).** Every padded `<section>`, all 6 `.feat-spotlight-*` cards, the founder block, the footer wrapper, the pricing card headers — all now AL with their 72px padding applied.
+
+### Padding precision
+
+- **CSS padding values now win when they match geometry within 4px.** Sections show clean `72px` paddings in the Figma right panel instead of `71.34px` from sub-pixel rounding. Same for `itemSpacing` via CSS gap / row-gap / column-gap. New helpers `preferCssPadding()` and `preferCssSpacing()` in `code.js`.
+
+### Forms (buttons / inputs / badges)
+
+- **Text-with-background leaves now render as Auto Layout frames.** Every `<button>`, `<input>`, badge, pill, and "text inside a styled box" used to come through as a plain Frame with the text positioned at fixed `(x, y)` coords — resizing the button didn't reflow the text. Now wraps in an AL HORIZONTAL frame with all four CSS paddings, center alignment, and primary-axis alignment honoring the source `text-align`.
+
+### CSS mask-image icons (Heroicons / Tailwind pattern)
+
+- **`mask-image: url(icon.svg); background: <color>` icons now capture as editable vectors.** This pattern (a colored element clipped to an SVG silhouette) used to be skipped entirely — icons came through as plain rectangles in the background color, no shape. Now `mask-image` is captured, the SVG is fetched, its outer `<svg>` gets `fill="<color>"` so all unfilled descendants inherit, `currentColor` is substituted globally, and the result is stored as `node.svg.source` so Figma imports it as a real vector.
+
+### Repeating gradients (grid patterns, diagonal stripes, dot grids)
+
+- **Tiled and repeating backgrounds now bake to a small image tile.** Figma can't natively tile a gradient fill, so the grid pattern on cards (two stacked linear-gradients at 26px × 26px) and `.pb-deco`-style diagonal stripes (`repeating-linear-gradient`) used to render as a single flat gradient. New capture-side `bakeBackgroundTile()` uses a foreignObject SVG with the CSS background applied to a `<div>` → loads it as an `<img>` → draws to a canvas → emits a PNG data URI. Render side detects the tile flag on the asset and uses Figma's `IMAGE + TILE` scale mode at scalingFactor 1 so the pattern repeats at the captured pixel size.
+
+### SVG colors
+
+- **Multi-color SVGs no longer get blanket-recolored.** The render used to overwrite every fill in the SVG when any single path used `currentColor`. New approach: substitute `currentColor` with a sentinel color (`#fefe01`) before handing the SVG to Figma's importer, then after import find vectors painted with the sentinel and swap them for the real CSS color. Hard-coded fills in multi-color icons are preserved.
+
+### Missing layers
+
+- **Wrappers with CSS padding ≥ 4px no longer get flattened.** `isFlattenableWrapper` previously collapsed any wrapper with no paint, even if it had padding — silently losing the spacing the wrapper introduced around its children. Now padding counts as structurally meaningful.
+
+### New feature: section capture (element picker)
+
+- **Selection mode is wired up.** The "Selection" capture mode in the popup was a stub that fell through to a full-page capture. Now: when you pick Selection and click Capture, the page enters a picker overlay — hovered element gets an acid-green outline + dimmed surrounding, click any element to capture just that subtree, Esc to cancel. The `.wsnap` document dimensions become the picked element's bounding box instead of the whole page.
+
+### Margins captured
+
+- **CSS margin sides added to STYLE_KEYS.** `marginTop / Right / Bottom / Left` now in every captured node. Render doesn't use them yet (Figma AL has no per-child margin), but the data is there for future per-pair spacing improvements.
+
+### Research
+
+- **Direct copy-to-Figma without the plugin: spike doc.** Wrote `docs/direct-paste-research.md` covering three paths (replicate Figma's internal clipboard format, use the REST API, or a hybrid clipboard payload that the plugin reads on paste). Recommendation: skip the first two (fragile / lower fidelity), implement the third as a small follow-up when ready.
+
+### Verified
+
+- All four files (`capture.js`, `background.js`, `popup.js`, `code.js`) pass `node --check`.
+- AL coverage simulation on FluentMembers `.wsnap`: 534 → 569 (+35) AL containers, zero regressions (new gates are strictly looser).
+- All other fixes verified by inspection of the diagnostic tree against the rendered code paths.
+
+### Still pending verification with a fresh Figma re-import
+
+These are coded but need eyes on the Figma render to confirm: per-run text styles for `20000` + `mAh` sub-size (task #12), small background-only boxes like the battery tip (#15), the Nexode / Genshin children order swap (#13), and the line-height text padding case (#7). If any are still off after re-import, the captured tree + a Figma screenshot will let me trace the specific failure.
+
+---
+
 ## v0.4.12 — 2026-05-30
 
 ### Fix: SVG icons missing colors / strokes / glow

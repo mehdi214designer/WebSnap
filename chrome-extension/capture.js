@@ -37,8 +37,10 @@
     'grid-template-columns', 'grid-template-rows', 'grid-auto-flow',
     'object-fit', 'object-position',
     'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
     'overflow', 'overflow-x', 'overflow-y',
     'transform', 'filter', 'mix-blend-mode',
+    'mask-image', '-webkit-mask-image',
     'z-index', 'cursor'
   ];
 
@@ -73,6 +75,20 @@
 
   async function runCapture(options) {
     report(2, 'Preparing page...');
+
+    // Section capture — let the user point-and-click any element on the page; only that
+    // element's subtree is captured. Falls back to document.body on cancel.
+    let captureRoot = document.body;
+    if (options.mode === 'selection') {
+      report(4, 'Click any element to capture (Esc to cancel)');
+      const picked = await pickElement();
+      if (picked) {
+        captureRoot = picked;
+      } else {
+        // User pressed Esc — abort cleanly instead of falling through to a full-page capture
+        throw new Error('Selection cancelled');
+      }
+    }
 
     // Save original scroll, restore at end
     const originalScroll = { x: window.scrollX, y: window.scrollY };
@@ -148,7 +164,7 @@
     try { await document.fonts.ready; } catch (e) {}
 
     report(25, 'Walking DOM tree...');
-    const tree = await buildNode(document.body, 0, 1);
+    const tree = await buildNode(captureRoot, 0, 1);
     report(70, 'Resolving images...');
     await Promise.all(assetPromises);
 
@@ -159,14 +175,23 @@
     if (animOverride && animOverride.parentNode) animOverride.remove();
     window.scrollTo(originalScroll.x, originalScroll.y);
 
-    const docWidth = Math.max(
-      document.documentElement.scrollWidth,
-      document.body ? document.body.scrollWidth : 0
-    );
-    const docHeight = Math.max(
-      document.documentElement.scrollHeight,
-      document.body ? document.body.scrollHeight : 0
-    );
+    // Document dimensions: full page for body captures, the picked element's bounds for
+    // selection captures (so the import frame in Figma matches what the user actually picked).
+    let docWidth, docHeight;
+    if (captureRoot === document.body) {
+      docWidth = Math.max(
+        document.documentElement.scrollWidth,
+        document.body ? document.body.scrollWidth : 0
+      );
+      docHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body ? document.body.scrollHeight : 0
+      );
+    } else {
+      const r = captureRoot.getBoundingClientRect();
+      docWidth = Math.round(r.width);
+      docHeight = Math.round(r.height);
+    }
 
     const assets = {};
     let imagesFetched = 0, imagesFailed = 0;
@@ -415,6 +440,54 @@
       if (gradients.length) {
         node.styles.backgroundGradients = gradients;
         node.styles.backgroundGradient = gradients[0];
+      }
+
+      // Tiled / repeating gradients (grid patterns, diagonal stripes, dot grids, etc.)
+      // need to render as a small bitmap that Figma can repeat as an IMAGE fill with
+      // TILE scale mode — Figma can't natively tile a gradient fill. Detection: any
+      // gradient marked `repeating-*`, OR a background-size that's explicit pixels with
+      // background-repeat: repeat (the grid-line case on the FluentMembers page).
+      const bgSize = styles.backgroundSize || '';
+      const bgRepeat = styles.backgroundRepeat || 'repeat';
+      const hasRepeatingGrad = gradients.some(function (g) { return g.repeating; });
+      const hasTiledSize = /\d+(\.\d+)?(px|em|rem)\s+\d+(\.\d+)?(px|em|rem)/.test(bgSize) &&
+                          bgRepeat.indexOf('no-repeat') < 0;
+      if ((hasRepeatingGrad || hasTiledSize) && !node.styles.backgroundAsset && gradients.length) {
+        const tileSize = parseTileSize(bgSize, gradients[0]);
+        if (tileSize) {
+          const tileUri = await bakeBackgroundTile(bgImg, tileSize.w, tileSize.h);
+          if (tileUri) {
+            // Store as backgroundAsset with tile metadata so the renderer picks IMAGE+TILE
+            const id = 'asset_' + (++assetCounter);
+            assetMap.set('tile-' + id, { id, dataUri: tileUri });
+            node.styles.backgroundAsset = { id: id, width: tileSize.w, height: tileSize.h, tile: true };
+            // Drop the gradient now that we have a bitmap — render would otherwise paint both
+            delete node.styles.backgroundGradients;
+            delete node.styles.backgroundGradient;
+          }
+        }
+      }
+    }
+
+    // CSS mask-image — Heroicons / Tailwind / Phosphor pattern: an element with a solid
+    // background-color and `mask-image: url(icon.svg)` shows the bg color clipped to the
+    // SVG silhouette. Without handling, these appear as plain colored rectangles. We fetch
+    // the SVG, recolor it with the bg color, and store as the node's editable vector
+    // source so it imports into Figma as a real shape.
+    const maskRaw = styles.maskImage || styles['-webkit-mask-image'] || styles.getPropertyValue('mask-image') || styles.getPropertyValue('-webkit-mask-image');
+    if (maskRaw && maskRaw !== 'none' && /url\(/i.test(maskRaw)) {
+      const maskUrlMatch = maskRaw.match(/url\(["']?([^"')]+)["']?\)/);
+      if (maskUrlMatch) {
+        const maskColor = styles.backgroundColor && styles.backgroundColor !== 'rgba(0, 0, 0, 0)' && styles.backgroundColor !== 'transparent'
+          ? styles.backgroundColor
+          : (styles.color || 'rgb(0, 0, 0)');
+        const svgText = await fetchAsText(maskUrlMatch[1]);
+        if (svgText && svgText.includes('<svg')) {
+          node.svg = { source: recolorSvgFill(svgText, maskColor) };
+          // The bg color is now expressed via the SVG fill — drop it so the render doesn't
+          // also paint a colored rectangle behind the icon.
+          delete node.styles.backgroundColor;
+        }
       }
     }
 
@@ -1069,6 +1142,81 @@
     for (let i = 0; i < n; i++) inlineSvgPresentationStyles(liveKids[i], cloneKids[i]);
   }
 
+  // Parse a CSS backgroundSize like "26px 26px" (first layer only) or fall back to a
+  // sensible default based on the gradient kind. Returns { w, h } in pixels or null.
+  function parseTileSize(bgSize, firstGradient) {
+    const sizeFirst = (bgSize || '').split(',')[0].trim();
+    const m = sizeFirst.match(/^(\d+(?:\.\d+)?)px\s+(\d+(?:\.\d+)?)px$/);
+    if (m) {
+      const w = parseFloat(m[1]);
+      const h = parseFloat(m[2]);
+      if (w >= 2 && w <= 512 && h >= 2 && h <= 512) return { w: Math.round(w), h: Math.round(h) };
+    }
+    // Repeating gradient with no explicit size — compute a reasonable tile from the
+    // gradient's last stop (heuristic). Cap at 64px to keep the asset small.
+    if (firstGradient && firstGradient.repeating) {
+      const raw = firstGradient.raw || '';
+      const stopMatch = raw.match(/(\d+(?:\.\d+)?)px(?!\w)/g);
+      if (stopMatch && stopMatch.length) {
+        const max = Math.max.apply(null, stopMatch.map(parseFloat));
+        if (max >= 2 && max <= 64) return { w: Math.ceil(max * 2), h: Math.ceil(max * 2) };
+      }
+    }
+    return null;
+  }
+
+  // Render a CSS background (gradient or layered gradients) to a small PNG tile using
+  // the foreignObject SVG trick: wrap a <div> styled with the CSS background in a
+  // <foreignObject>, serialize the SVG, load it as an <img>, and draw it to a canvas.
+  // Returns a data URI or null on failure. Used for repeating gradients + tile-sized
+  // backgrounds that Figma can then render as an IMAGE fill with TILE scale mode.
+  async function bakeBackgroundTile(bgImage, w, h) {
+    try {
+      // Escape special XML chars in the CSS bg string before stuffing into an SVG attribute.
+      const escCss = bgImage.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      const svgStr =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+          '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+            '<div xmlns="http://www.w3.org/1999/xhtml" style="width:' + w + 'px;height:' + h + 'px;background-image:' + escCss + ';background-size:' + w + 'px ' + h + 'px;background-repeat:no-repeat;"></div>' +
+          '</foreignObject>' +
+        '</svg>';
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = await new Promise(function (resolve, reject) {
+        const i = new Image();
+        i.onload = function () { resolve(i); };
+        i.onerror = reject;
+        i.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = w * 2; // 2x for retina sharpness
+      canvas.height = h * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const dataUri = canvas.toDataURL('image/png');
+      return (dataUri && dataUri.length > 200) ? dataUri : null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  // Recolor every fillable path in an SVG by setting `fill` on the outer <svg> (cascades
+  // to descendants without their own fill) and substituting `currentColor` with the target.
+  // Used for CSS mask-image icons, which are typically line-art SVGs with no explicit fill.
+  function recolorSvgFill(svgText, color) {
+    if (!svgText || !color || color === 'transparent' || color === 'rgba(0, 0, 0, 0)') return svgText;
+    let out = svgText;
+    // currentColor anywhere in attrs/styles resolves to our target color
+    out = out.replace(/currentColor/gi, color);
+    // Add fill on outer <svg> tag — inherits to children with no explicit fill of their own
+    out = out.replace(/<svg\b([^>]*)>/i, function (_, attrs) {
+      if (/\sfill=/i.test(attrs)) return '<svg' + attrs + '>'; // already has fill
+      return '<svg fill="' + color + '"' + attrs + '>';
+    });
+    return out;
+  }
+
   function serializeSvgWithInlinedStyles(svgEl) {
     let clone;
     try { clone = svgEl.cloneNode(true); }
@@ -1263,6 +1411,72 @@
 
   function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
+  }
+
+  // ---------- Element picker (section capture mode) ----------
+  // Show a hover overlay that follows the cursor. Click to pick, Esc to cancel. Returns
+  // the chosen element (or null on cancel). The overlay is pointer-events:none so
+  // elementFromPoint still hits the real page underneath.
+  function pickElement() {
+    return new Promise(function (resolve) {
+      const overlay = document.createElement('div');
+      overlay.setAttribute('data-websnap-overlay', '1');
+      overlay.style.cssText =
+        'position:fixed;pointer-events:none;border:2px solid #a8ff36;' +
+        'background:rgba(168,255,54,0.15);box-shadow:0 0 0 9999px rgba(0,0,0,0.25);' +
+        'z-index:2147483647;transition:all 0.08s ease-out;left:0;top:0;width:0;height:0;';
+      const label = document.createElement('div');
+      label.style.cssText =
+        'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483647;' +
+        'background:#050a05;color:#a8ff36;padding:10px 18px;border-radius:999px;' +
+        'border:1px solid #a8ff36;font:600 12px/1 -apple-system,system-ui,sans-serif;' +
+        'letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 8px 24px rgba(0,0,0,0.5);' +
+        'pointer-events:none;';
+      label.textContent = 'Click a section to capture · Esc to cancel';
+      document.documentElement.appendChild(overlay);
+      document.documentElement.appendChild(label);
+
+      const prevCursor = document.body.style.cursor;
+      document.body.style.cursor = 'crosshair';
+      let current = null;
+
+      function onMove(e) {
+        // elementFromPoint goes through our overlay (pointer-events:none) and finds the
+        // real page element at the cursor. Update the overlay to wrap it.
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        if (!el || el === overlay || el === label || el === current) return;
+        current = el;
+        const r = el.getBoundingClientRect();
+        overlay.style.left = r.left + 'px';
+        overlay.style.top = r.top + 'px';
+        overlay.style.width = r.width + 'px';
+        overlay.style.height = r.height + 'px';
+      }
+      function onClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        cleanup();
+        resolve(current);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cleanup();
+          resolve(null);
+        }
+      }
+      function cleanup() {
+        try { overlay.remove(); } catch (_e) {}
+        try { label.remove(); } catch (_e) {}
+        document.body.style.cursor = prevCursor || '';
+        document.removeEventListener('mousemove', onMove, true);
+        document.removeEventListener('click', onClick, true);
+        document.removeEventListener('keydown', onKey, true);
+      }
+      document.addEventListener('mousemove', onMove, true);
+      document.addEventListener('click', onClick, true);
+      document.addEventListener('keydown', onKey, true);
+    });
   }
 
   function report(pct, label) {
